@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
+import 'qr_code_screen.dart';
 
 class MainWrapperScreen extends StatefulWidget {
   const MainWrapperScreen({super.key});
@@ -14,6 +15,7 @@ class _MainWrapperScreenState extends State<MainWrapperScreen> {
 
   // Global keys for independent navigators for each tab
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
+    GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
   ];
@@ -43,7 +45,8 @@ class _MainWrapperScreenState extends State<MainWrapperScreen> {
           index: _currentIndex,
           children: [
             _buildOffstageNavigator(0, const HomeScreen()),
-            _buildOffstageNavigator(1, const ProfileScreen()),
+            _buildOffstageNavigator(1, const QRCodeScreen()),
+            _buildOffstageNavigator(2, const ProfileScreen()),
           ],
         ),
         bottomNavigationBar: BottomNavigationBar(
@@ -62,6 +65,10 @@ class _MainWrapperScreenState extends State<MainWrapperScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
               label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.qr_code),
+              label: 'QR Code',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person),
