@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/login_screen.dart';
+import 'screens/main_wrapper_screen.dart';
 import 'providers/auth_provider.dart';
+import 'utils/styles.dart';
 
 void main() {
   runApp(
@@ -21,12 +23,20 @@ class EventManagerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Event Manager',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
+      title: 'EasyEat',
+      theme: AppStyles.lightTheme, // Start with light for Auth
+      darkTheme: AppStyles.darkTheme,
+      themeMode: ThemeMode.system,
+      home: Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          // If the user is logged in, show the main dashboard
+          if (auth.isLoggedIn) {
+            return const MainWrapperScreen();
+          }
+          // Otherwise show the login screen
+          return const LoginScreen();
+        },
       ),
-      home: const LoginScreen(),
     );
   }
 }

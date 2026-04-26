@@ -91,9 +91,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const Divider(),
                     ListTile(
                       leading: const Icon(Icons.business),
-                      title: const Text('Organization'),
+                      title: const Text('Restaurante'),
                       subtitle: Text(
-                        user.organization?.name ?? 'No Organization',
+                        user.restaurant?.name ?? 'No asignado',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -118,10 +118,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 label: const Text('Log out', style: TextStyle(fontSize: 16)),
                 onPressed: () {
                   context.read<AuthProvider>().logout();
-                  Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                        (route) => false,
-                  );
                 },
               ),
             ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
+import 'dashboard_screen.dart';
 import 'profile_screen.dart';
 
 class MainWrapperScreen extends StatefulWidget {
@@ -42,10 +42,11 @@ class _MainWrapperScreenState extends State<MainWrapperScreen> {
         body: IndexedStack(
           index: _currentIndex,
           children: [
-            _buildOffstageNavigator(0, const HomeScreen()),
+            _buildOffstageNavigator(0, const DashboardScreen()),
             _buildOffstageNavigator(1, const ProfileScreen()),
           ],
         ),
+
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: (index) {

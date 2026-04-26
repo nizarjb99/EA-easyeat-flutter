@@ -3,16 +3,15 @@ import 'package:http/http.dart' as http;
 import '../utils/constants.dart';
 
 class AuthService {
-  Future<Map<String, dynamic>> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(String email, String password, {String role = 'employee'}) async {
     try {
       final response = await http.post(
         Uri.parse('${AppConstants.baseUrl}/auth/login'),
-        headers: <String, String>{
-          'Content-Type': 'application/json',
-        },
+        headers: <String, String>{'Content-Type': 'application/json'},
         body: json.encode({
           'email': email,
           'password': password,
+          'role': role, 
         }),
       );
 
@@ -28,18 +27,19 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> signup(
-      String name, String email, String password, String organizationId) async {
+    String name,
+    String email,
+    String password,
+  ) async {
     try {
+      // Create the customer using the existing backend endpoint
       final response = await http.post(
-        Uri.parse('${AppConstants.baseUrl}/auth/signup'),
-        headers: <String, String>{
-          'Content-Type': 'application/json',
-        },
+        Uri.parse('${AppConstants.baseUrl}/customers'),
+        headers: <String, String>{'Content-Type': 'application/json'},
         body: json.encode({
           'name': name,
           'email': email,
           'password': password,
-          'organization': organizationId,
         }),
       );
 
@@ -54,7 +54,11 @@ class AuthService {
     }
   }
 
-  Future<Map<String, dynamic>> fetchUserById(String userId, String accessToken) async {
+
+  Future<Map<String, dynamic>> fetchUserById(
+    String userId,
+    String accessToken,
+  ) async {
     try {
       final response = await http.get(
         Uri.parse('${AppConstants.baseUrl}/users/$userId'),

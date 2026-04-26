@@ -1,41 +1,51 @@
-import 'organization.dart';
+import 'restaurant.dart';
 
 class User {
   final String id;
   final String name;
   final String email;
-  final String role;
-  final Organization? organization; // Organization object
+  final String role; // 'customer', 'staff', 'owner', 'admin'
+  final Restaurant? restaurant; 
 
   User({
     required this.id,
     required this.name,
     required this.email,
     required this.role,
-    this.organization,
+    this.restaurant,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
-    Organization? org;
-    if (json['organization'] != null) {
-      if (json['organization'] is Map<String, dynamic>) {
-        org = Organization.fromJson(json['organization']);
+    // Handling nested profile from /employees or flat from /auth/login
+    final profile = json['profile'] as Map<String, dynamic>?;
+    
+    final id = (json['_id'] ?? json['id'] ?? '').toString();
+    final name = profile?['name'] ?? json['name'] ?? '';
+    final email = profile?['email'] ?? json['email'] ?? '';
+    final role = profile?['role'] ?? json['role'] ?? 'customer';
+    
+    // In backend can be restaurant_id (ID) or restaurant (Object)
+    final restData = json['restaurant_id'] ?? json['restaurant'] ?? json['organization'];
+
+    Restaurant? rest;
+    if (restData != null) {
+      if (restData is Map<String, dynamic>) {
+        rest = Restaurant.fromJson(restData);
       } else {
-        // If it's just a String (ID), create an Organization with that ID
-        org = Organization(
-          id: json['organization'].toString(),
-          name: 'Organization', // Fallback name
-          users: [],
+        rest = Restaurant(
+          id: restData.toString(),
+          name: 'Mi Restaurante',
+          employees: [],
         );
       }
     }
 
     return User(
-      id: json['_id'] ?? '',
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      role: json['role'] ?? 'user',
-      organization: org,
+      id: id,
+      name: name,
+      email: email,
+      role: role,
+      restaurant: rest,
     );
   }
 
@@ -45,7 +55,7 @@ class User {
       'name': name,
       'email': email,
       'role': role,
-      'organization': organization?.id, // Store ID when converting back to JSON
+      'restaurant': restaurant?.id,
     };
   }
 }
