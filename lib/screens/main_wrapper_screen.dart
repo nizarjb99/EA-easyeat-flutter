@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
+import 'dashboard_screen.dart';
 import 'profile_screen.dart';
 import 'qr_code_screen.dart';
 
@@ -28,8 +28,9 @@ class _MainWrapperScreenState extends State<MainWrapperScreen> {
         if (didPop) return;
 
         // If there is history in the current tab, we will go back in it
-        final isFirstRouteInCurrentTab =
-        !await _navigatorKeys[_currentIndex].currentState!.maybePop();
+        final isFirstRouteInCurrentTab = !await _navigatorKeys[_currentIndex]
+            .currentState!
+            .maybePop();
 
         if (isFirstRouteInCurrentTab) {
           // If we are at the root and it's not the first tab, go back to the first one
@@ -44,17 +45,20 @@ class _MainWrapperScreenState extends State<MainWrapperScreen> {
         body: IndexedStack(
           index: _currentIndex,
           children: [
-            _buildOffstageNavigator(0, const HomeScreen()),
+            _buildOffstageNavigator(0, const DashboardScreen()),
             _buildOffstageNavigator(1, const QRCodeScreen()),
             _buildOffstageNavigator(2, const ProfileScreen()),
           ],
         ),
+
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: (index) {
             if (index == _currentIndex) {
               // If we tap the tab we are already on, we return to the root of that tab
-              _navigatorKeys[index].currentState?.popUntil((route) => route.isFirst);
+              _navigatorKeys[index].currentState?.popUntil(
+                (route) => route.isFirst,
+              );
             } else {
               setState(() {
                 _currentIndex = index;
@@ -62,18 +66,12 @@ class _MainWrapperScreenState extends State<MainWrapperScreen> {
             }
           },
           items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
             BottomNavigationBarItem(
               icon: Icon(Icons.qr_code),
               label: 'QR Code',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Profile',
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
           ],
         ),
       ),
@@ -87,9 +85,7 @@ class _MainWrapperScreenState extends State<MainWrapperScreen> {
       child: Navigator(
         key: _navigatorKeys[index],
         onGenerateRoute: (routeSettings) {
-          return MaterialPageRoute(
-            builder: (context) => rootWidget,
-          );
+          return MaterialPageRoute(builder: (context) => rootWidget);
         },
       ),
     );

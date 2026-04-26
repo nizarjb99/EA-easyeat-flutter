@@ -23,21 +23,23 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(String email, String password, {String role = 'employee'}) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
 
     try {
-      // Response shape: { message, accessToken, usuario: { _id, name, email, role, organization } }
+      // Backend response: { message, accessToken, employee: { ... } }
       final Map<String, dynamic> response =
-      await _authService.login(email.trim(), password.trim());
+      await _authService.login(email.trim(), password.trim(), role: role);
 
       _accessToken = response['accessToken'] as String?;
 
-      final dynamic rawUser = response['usuario'];
+      // Look for employee, admin, or customer key
+      final dynamic rawUser = response['employee'] ?? response['admin'] ?? response['customer'] ?? response['usuario'];
+      
       if (rawUser == null || rawUser is! Map<String, dynamic>) {
-        throw Exception('Unexpected server response');
+        throw Exception('Unexpected server response: missing user data');
       }
 
       _currentUser = User.fromJson(rawUser);
@@ -56,32 +58,20 @@ class AuthProvider extends ChangeNotifier {
       String name,
       String email,
       String password,
-      String organizationId,
       ) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
 
     try {
-      // Response shape: { user: populatedUser, accessToken }
       final Map<String, dynamic> response = await _authService.signup(
         name,
         email.trim(),
         password.trim(),
-        organizationId,
       );
 
-      _accessToken = response['accessToken'] as String?;
-
-      final dynamic rawUser = response['user'];
-      if (rawUser == null || rawUser is! Map<String, dynamic>) {
-        throw Exception('Unexpected server response');
-      }
-
-      _currentUser = User.fromJson(rawUser);
-      _isLoading = false;
-      notifyListeners();
-      return true;
+      // After successful registration, we perform auto-login like the React app
+      return await login(email, password, role: 'customer');
     } catch (e) {
       _isLoading = false;
       _errorMessage = e.toString().replaceAll('Exception: ', '');
@@ -89,6 +79,7 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
   }
+
 
   Future<void> loadProfileFromApi() async {
     if (_currentUser == null || _accessToken == null || _accessToken!.isEmpty) {
