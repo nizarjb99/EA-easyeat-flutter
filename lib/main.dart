@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'screens/login_screen.dart';
-import 'screens/main_wrapper_screen.dart';
+
 import 'providers/auth_provider.dart';
 import 'utils/styles.dart';
+
+import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/main_wrapper_screen.dart';
 
 void main() {
   runApp(
@@ -24,19 +28,18 @@ class EventManagerApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'EasyEat',
-      theme: AppStyles.lightTheme, // Start with light for Auth
+      theme: AppStyles.lightTheme,
       darkTheme: AppStyles.darkTheme,
       themeMode: ThemeMode.system,
-      home: Consumer<AuthProvider>(
-        builder: (context, auth, _) {
-          // If the user is logged in, show the main dashboard
-          if (auth.isLoggedIn) {
-            return const MainWrapperScreen();
-          }
-          // Otherwise show the login screen
-          return const LoginScreen();
-        },
-      ),
+
+      initialRoute: '/',
+
+      routes: {
+        '/': (context) => const HomePage(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/dashboard': (context) => const MainWrapperScreen(),
+      },
     );
   }
 }
