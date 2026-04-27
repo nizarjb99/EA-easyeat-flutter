@@ -7,7 +7,7 @@ import 'utils/styles.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
-import 'screens/main_wrapper_screen.dart';
+import 'screens/dashboard_router_screen.dart';
 
 void main() {
   runApp(
@@ -31,14 +31,12 @@ class EventManagerApp extends StatelessWidget {
       theme: AppStyles.lightTheme,
       darkTheme: AppStyles.darkTheme,
       themeMode: ThemeMode.system,
-
       initialRoute: '/',
-
       routes: {
         '/': (context) => const HomePage(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/dashboard': (context) => const MainWrapperScreen(),
+        '/dashboard': (context) => const DashboardRouterScreen(),
       },
     );
   }
