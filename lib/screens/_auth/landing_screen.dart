@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/auth_provider.dart';
-import 'main_navigation_screen.dart'; // Import the new main navigation screen
+import '../../providers/auth_provider.dart';
+import '../_common/navigation_screen.dart'; // Import the new main navigation screen
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

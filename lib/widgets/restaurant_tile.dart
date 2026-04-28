@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/restaurant.dart';
-import '../screens/restaurant_detail_screen.dart';
+import '../screens/_common/restaurant_detail_screen.dart';
 
 class RestaurantTile extends StatelessWidget {
   final Restaurant restaurant;

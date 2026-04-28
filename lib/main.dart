@@ -4,10 +4,10 @@ import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'utils/styles.dart';
 
-import 'screens/home_screen.dart';
-import 'screens/login_screen.dart';
-import 'screens/register_screen.dart';
-import 'screens/dashboard_router_screen.dart';
+import 'screens/_auth/landing_screen.dart';
+import 'screens/_auth/login_screen.dart';
+import 'screens/_auth/register_screen.dart';
+import 'screens/app_entry_point.dart';
 
 void main() {
   runApp(

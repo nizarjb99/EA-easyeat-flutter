@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/restaurant.dart';
-import 'qr_code_screen.dart';
+import '../../models/restaurant.dart';
+import '../_customer/qr_code_screen.dart';
 
 
 // ---------------------------------------------------------------------------

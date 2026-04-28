@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
-import 'login_screen.dart';
-import 'main_navigation_screen.dart'; // Import the new main navigation screen
+import '_auth/login_screen.dart';
+import '_common/navigation_screen.dart'; // Import the new main navigation screen
 
 class DashboardRouterScreen extends StatelessWidget {
   const DashboardRouterScreen({super.key});

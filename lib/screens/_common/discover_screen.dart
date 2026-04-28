@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:ea_easyeat_flutter/models/restaurant.dart';
-import 'package:ea_easyeat_flutter/screens/restaurant_card.dart';
+import 'package:ea_easyeat_flutter/screens/_common/restaurant_card.dart';
 import 'package:ea_easyeat_flutter/services/restaurant_service.dart';
-import 'package:ea_easyeat_flutter/screens/restaurant_detail_screen.dart';
+import 'package:ea_easyeat_flutter/screens/_common/restaurant_detail_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
