@@ -9,8 +9,8 @@ class TimetableSlot {
 
   factory TimetableSlot.fromJson(Map<String, dynamic> json) {
     return TimetableSlot(
-      open: json['open'] as String,
-      close: json['close'] as String,
+      open: json['open'] as String? ?? '',
+      close: json['close'] as String? ?? '',
     );
   }
 
@@ -88,8 +88,11 @@ class GeoPoint {
 
   factory GeoPoint.fromJson(Map<String, dynamic> json) {
     return GeoPoint(
-      type: json['type'] as String,
-      coordinates: List<double>.from(json['coordinates'] as List<dynamic>),
+      type: json['type']?.toString() ?? 'Point',
+      coordinates: (json['coordinates'] as List?)
+              ?.map((e) => (e as num).toDouble())
+              .toList() ??
+          const [0.0, 0.0],
     );
   }
 
@@ -115,11 +118,14 @@ class RestaurantLocation {
   });
 
   factory RestaurantLocation.fromJson(Map<String, dynamic> json) {
+    final rawCoordinates = json['coordinates'];
     return RestaurantLocation(
-      city: json['city'] as String,
-      address: json['address'] as String?,
-      googlePlaceId: json['googlePlaceId'] as String?,
-      coordinates: GeoPoint.fromJson(json['coordinates'] as Map<String, dynamic>),
+      city: json['city']?.toString() ?? '',
+      address: json['address']?.toString(),
+      googlePlaceId: json['googlePlaceId']?.toString(),
+      coordinates: rawCoordinates is Map<String, dynamic>
+          ? GeoPoint.fromJson(rawCoordinates)
+          : GeoPoint(type: 'Point', coordinates: [0.0, 0.0]),
     );
   }
 
@@ -176,19 +182,27 @@ class RestaurantProfile {
   });
 
   factory RestaurantProfile.fromJson(Map<String, dynamic> json) {
+    final rawLocation = json['location'];
+    final location = rawLocation is Map<String, dynamic>
+        ? RestaurantLocation.fromJson(rawLocation)
+        : RestaurantLocation(
+            city: '',
+            coordinates: GeoPoint(type: 'Point', coordinates: [0.0, 0.0]),
+          );
+
     return RestaurantProfile(
-      name: json['name'] as String,
-      description: json['description'] as String,
+      name: json['name']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
       globalRating: (json['globalRating'] as num?)?.toDouble() ?? 0.0,
-      category: List<String>.from(json['category'] as List<dynamic>),
-      timetable: json['timetable'] != null
+      category: (json['category'] as List?)?.map((e) => e.toString()).toList() ?? const [],
+      timetable: json['timetable'] is Map<String, dynamic>
           ? Timetable.fromJson(json['timetable'] as Map<String, dynamic>)
           : null,
-      image: (json['image'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      contact: json['contact'] != null
+      image: (json['image'] as List?)?.map((e) => e.toString()).toList(),
+      contact: json['contact'] is Map<String, dynamic>
           ? RestaurantContact.fromJson(json['contact'] as Map<String, dynamic>)
           : null,
-      location: RestaurantLocation.fromJson(json['location'] as Map<String, dynamic>),
+      location: location,
     );
   }
 

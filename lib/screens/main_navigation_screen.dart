@@ -29,8 +29,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   // Screens for customers
   final List<Widget> _customerScreens = [
     const HomeCustomerScreen(), // Home for customers
+    const DiscoverScreen(),
     const PointsWalletScreen(),
-    const QRCodeScreen(),
     const ProfileScreen(),
   ];
 
@@ -54,8 +54,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     final List<BottomNavigationBarItem> customerNavItems = [
       const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'), // Changed to Home
+      const BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Discover'),
       const BottomNavigationBarItem(icon: Icon(Icons.wallet_giftcard), label: 'Points'),
-      const BottomNavigationBarItem(icon: Icon(Icons.qr_code), label: 'QR Code'),
       const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
     ];
 
