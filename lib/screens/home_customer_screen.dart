@@ -174,9 +174,9 @@ class _StatCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Icon(icon, color: color, size: 28),
-          const Spacer(),
           Text(value, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: HomeCustomerScreen.dark)),
           Text(label, style: const TextStyle(color: HomeCustomerScreen.grey, fontWeight: FontWeight.w600)),
         ],
@@ -199,12 +199,26 @@ class _EmptyCard extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, size: 42, color: HomeCustomerScreen.orange),
-          const SizedBox(height: 14),
-          Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: HomeCustomerScreen.dark)),
+          Icon(icon, color: HomeCustomerScreen.grey, size: 48),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: HomeCustomerScreen.dark,
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
           const SizedBox(height: 8),
-          Text(subtitle, textAlign: TextAlign.center, style: const TextStyle(color: HomeCustomerScreen.grey, height: 1.4)),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: HomeCustomerScreen.grey,
+                ),
+          ),
         ],
       ),
     );

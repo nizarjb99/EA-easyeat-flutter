@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import 'login_screen.dart';
+// import 'login_screen.dart'; // Removed unused import
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -25,14 +25,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
-    final user = authProvider.currentUser;
     final isLoading = authProvider.isLoading;
     final errorMessage = authProvider.errorMessage;
 
-    if (user == null) {
+    // Use displayName, email, and restaurant from AuthProvider directly
+    final String displayName = authProvider.displayName;
+    final String? email = authProvider.email;
+    final String? restaurantName = authProvider.restaurant?['name'];
+
+    // Check if there's any logged-in user (customer or employee)
+    if (!authProvider.isLoggedIn) {
       return Scaffold(
         appBar: AppBar(title: const Text('Profile')),
-        body: const Center(child: Text('Error: User session not found')),
+        body: const Center(child: Text('Error: User session not found or not logged in')),
       );
     }
 
@@ -75,7 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       leading: const Icon(Icons.person_outline),
                       title: const Text('Name'),
                       subtitle: Text(
-                        user.name,
+                        displayName,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -84,19 +89,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       leading: const Icon(Icons.email_outlined),
                       title: const Text('Email'),
                       subtitle: Text(
-                        user.email,
+                        email ?? 'N/A', // Display N/A if email is null
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
-                    const Divider(),
-                    ListTile(
-                      leading: const Icon(Icons.business),
-                      title: const Text('Restaurante'),
-                      subtitle: Text(
-                        user.restaurant?.name ?? 'No asignado',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                    if (authProvider.isEmployee) ...[ // Only show restaurant for employees
+                      const Divider(),
+                      ListTile(
+                        leading: const Icon(Icons.business),
+                        title: const Text('Restaurante'),
+                        subtitle: Text(
+                          restaurantName ?? 'No asignado',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),

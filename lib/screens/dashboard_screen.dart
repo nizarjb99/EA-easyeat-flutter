@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../models/restaurant.dart';
 import '../models/visit.dart';
 import '../services/restaurant_service.dart';
 import '../utils/styles.dart';
+import '../models/employee.dart'; // Import Employee model
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -17,7 +17,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final RestaurantService _service = RestaurantService();
   List<Visit> _visits = [];
   bool _isLoading = true;
-  String _errorMessage = '';
+  // String _errorMessage = ''; // Removed as it's unused
 
   @override
   void initState() {
@@ -28,16 +28,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _loadDashboardData() async {
     try {
       final auth = context.read<AuthProvider>();
-      final user = auth.currentUser;
+      final employee = auth.currentEmployee; // Use currentEmployee instead of currentUser
+      final restaurant = auth.restaurant; // Get restaurant from AuthProvider
       final token = auth.accessToken;
 
-      if (user?.restaurant?.id == null) {
+      if (restaurant == null || restaurant['_id'] == null) { // Check restaurant and its ID
         setState(() => _isLoading = false);
         return;
       }
 
       final visits = await _service.fetchVisitsByRestaurant(
-        user!.restaurant!.id,
+        restaurant['_id'], // Use restaurant ID from the map
         accessToken: token,
       );
 
@@ -50,7 +51,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = e.toString();
+        // _errorMessage = e.toString(); // Removed as it's unused
         _isLoading = false;
       });
     }
@@ -58,8 +59,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthProvider>().currentUser;
-    final restaurantName = user?.restaurant?.name ?? 'Tu restaurante';
+    final auth = context.watch<AuthProvider>();
+    final employee = auth.currentEmployee; // Use currentEmployee
+    final restaurantName = auth.restaurant?['name'] ?? 'Tu restaurante'; // Get restaurant name from AuthProvider
 
     return Scaffold(
       backgroundColor: const Color(0xFF0C0C0C), // Matching Landing Page bg
@@ -70,7 +72,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               color: AppColors.primary,
               child: CustomScrollView(
                 slivers: [
-                  _buildHeader(user),
+                  _buildHeader(employee), // Pass employee
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24),
@@ -99,12 +101,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildHeader(user) {
+  Widget _buildHeader(Employee? employee) { // Added type annotation
     return SliverAppBar(
       floating: true,
       pinned: true,
       expandedHeight: 80,
-      backgroundColor: const Color(0xFF0C0C0C).withOpacity(0.9),
+      backgroundColor: const Color(0xFF0C0C0C).withAlpha((255 * 0.9).round()), // Fixed withOpacity
       elevation: 0,
       flexibleSpace: Container(
         decoration: const BoxDecoration(
@@ -127,12 +129,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withAlpha((255 * 0.1).round()), // Fixed withOpacity
               borderRadius: BorderRadius.circular(99),
-              border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+              border: Border.all(color: AppColors.primary.withAlpha((255 * 0.3).round())), // Fixed withOpacity
             ),
             child: Text(
-              (user?.role ?? 'STAFF').toUpperCase(),
+              (employee?.role ?? 'STAFF').toUpperCase(),
               style: const TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
@@ -149,7 +151,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFF1F2937).withOpacity(0.5),
+                color: const Color(0xFF1F2937).withAlpha((255 * 0.5).round()), // Fixed withOpacity
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(color: const Color(0xFF374151)),
               ),
@@ -159,13 +161,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     radius: 12,
                     backgroundColor: AppColors.primary,
                     child: Text(
-                      user?.name[0].toUpperCase() ?? 'U',
+                      employee?.name[0].toUpperCase() ?? 'U',
                       style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    user?.name.split(' ')[0] ?? 'Usuario',
+                    employee?.name.split(' ')[0] ?? 'Usuario',
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
                   ),
                 ],
@@ -193,7 +195,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         border: Border.all(color: const Color(0xFF1F2937)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.05),
+            color: AppColors.primary.withAlpha((255 * 0.05).round()), // Fixed withOpacity
             blurRadius: 40,
             spreadRadius: -10,
             offset: const Offset(0, 20),
@@ -286,7 +288,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withAlpha((255 * 0.1).round()), // Fixed withOpacity
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, size: 22, color: color),
@@ -337,7 +339,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withAlpha((255 * 0.1).round()), // Fixed withOpacity
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(icon, size: 28, color: color),
@@ -403,7 +405,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             height: 44,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [AppColors.primary.withOpacity(0.3), AppColors.accent.withOpacity(0.2)],
+                colors: [AppColors.primary.withAlpha((255 * 0.3).round()), AppColors.accent.withAlpha((255 * 0.2).round())], // Fixed withOpacity
               ),
               shape: BoxShape.circle,
             ),
@@ -436,18 +438,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
           ),
-          if (visit.pointsEarned != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.accent.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '+${visit.pointsEarned!.toInt()} pts',
-                style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w900, fontSize: 14),
-              ),
+          // pointsEarned is now non-nullable with a default value, so no need for null check
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withAlpha((255 * 0.1).round()), // Fixed withOpacity
+              borderRadius: BorderRadius.circular(8),
             ),
+            child: Text(
+              '+${visit.pointsEarned.toInt()} pts', // Removed ! operator
+              style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w900, fontSize: 14),
+            ),
+          ),
           const SizedBox(width: 12),
           const Icon(Icons.chevron_right, color: Color(0xFF4B5563)),
         ],

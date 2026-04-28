@@ -9,12 +9,23 @@ class QRCodeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final user = authProvider.currentUser;
+    
+    // Use the general getters from AuthProvider
+    final String? customerId = authProvider.id;
+    final String customerName = authProvider.displayName;
+    final String? customerEmail = authProvider.email;
 
-    // For testing purposes, use the provided ID if no user is logged in
-    final String customerId = user?.id ?? "65f1c2a1b2c3d4e5f6789051";
-    final String customerName = user?.name ?? "Guest Customer";
-    final String customerEmail = user?.email ?? "65f1c2a1b2c3d4e5f6789051@easyeat.com";
+    if (customerId == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('My QR Code'),
+          centerTitle: true,
+        ),
+        body: const Center(
+          child: Text('Inicia sesión para ver tu código QR'),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -32,14 +43,16 @@ class QRCodeScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              customerEmail,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
+            if (customerEmail != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                customerEmail,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
               ),
-            ),
+            ],
             const SizedBox(height: 40),
             Container(
               padding: const EdgeInsets.all(16),
@@ -48,7 +61,7 @@ class QRCodeScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
+                    color: Colors.grey.withAlpha((255 * 0.2).round()),
                     spreadRadius: 5,
                     blurRadius: 7,
                     offset: const Offset(0, 3),
@@ -59,7 +72,6 @@ class QRCodeScreen extends StatelessWidget {
                 data: customerId,
                 version: QrVersions.auto,
                 size: 250.0,
-                // Add a small error correction to make it more robust
                 errorCorrectionLevel: QrErrorCorrectLevel.M,
               ),
             ),
@@ -72,13 +84,6 @@ class QRCodeScreen extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            if (user == null) ...[
-              const SizedBox(height: 20),
-              const Text(
-                '(Demo Mode: Using provided test ID)',
-                style: TextStyle(color: Colors.orange, fontSize: 12),
-              ),
-            ],
           ],
         ),
       ),

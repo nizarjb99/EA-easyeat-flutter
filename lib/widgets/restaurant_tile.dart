@@ -19,10 +19,10 @@ class RestaurantTile extends StatelessWidget {
           child: Icon(Icons.restaurant, color: Colors.white),
         ),
         title: Text(
-          restaurant.name,
+          restaurant.profile.name, // Access name from profile
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
-        subtitle: Text('${restaurant.employees.length} empleados registrados'),
+        subtitle: Text('${restaurant.employees?.length ?? 0} empleados registrados'), // Handle null employees
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
           Navigator.push(

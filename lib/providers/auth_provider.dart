@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../models/customer.dart';
 import '../models/employee.dart';
-import '../models/user.dart';
 import '../services/auth_service.dart';
 
 enum AuthAccountType { none, customer, employee }
@@ -10,7 +9,6 @@ enum AuthAccountType { none, customer, employee }
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
 
-  User? _currentUser; // kept for compatibility with your old screens
   Customer? _currentCustomer;
   Employee? _currentEmployee;
   Map<String, dynamic>? _restaurant;
@@ -20,8 +18,6 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   String _errorMessage = '';
 
-  User? get currentUser => _currentUser;
-  User? get user => _currentUser; // alias, useful for new screens
   Customer? get currentCustomer => _currentCustomer;
   Employee? get currentEmployee => _currentEmployee;
   Map<String, dynamic>? get restaurant => _restaurant;
@@ -30,7 +26,7 @@ class AuthProvider extends ChangeNotifier {
   String? get token => _accessToken;
   AuthAccountType get accountType => _accountType;
 
-  bool get isLoggedIn => _accessToken != null && (_currentCustomer != null || _currentEmployee != null || _currentUser != null);
+  bool get isLoggedIn => _accessToken != null && (_currentCustomer != null || _currentEmployee != null);
   bool get isCustomer => _accountType == AuthAccountType.customer;
   bool get isEmployee => _accountType == AuthAccountType.employee;
   bool get isOwner => _currentEmployee?.role == 'owner';
@@ -46,28 +42,27 @@ class AuthProvider extends ChangeNotifier {
   }
 
   String get displayName {
-    if (isCustomer) return _currentCustomer?.name ?? _currentUser?.name ?? 'Cliente';
-    if (isEmployee) return _currentEmployee?.name ?? _currentUser?.name ?? 'Empleado';
-    return _currentUser?.name ?? 'Usuario';
+    if (isCustomer) return _currentCustomer?.name ?? 'Cliente';
+    if (isEmployee) return _currentEmployee?.name ?? 'Empleado';
+    return 'Usuario';
   }
 
   String? get email {
-    if (isCustomer) return _currentCustomer?.email ?? _currentUser?.email;
-    if (isEmployee) return _currentEmployee?.email ?? _currentUser?.email;
-    return _currentUser?.email;
+    if (isCustomer) return _currentCustomer?.email;
+    if (isEmployee) return _currentEmployee?.email;
+    return null;
   }
 
   String? get id {
-    if (isCustomer) return _currentCustomer?.id ?? _currentUser?.id;
-    if (isEmployee) return _currentEmployee?.id ?? _currentUser?.id;
-    return _currentUser?.id;
+    if (isCustomer) return _currentCustomer?.id;
+    if (isEmployee) return _currentEmployee?.id;
+    return null;
   }
 
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
   void logout() {
-    _currentUser = null;
     _currentCustomer = null;
     _currentEmployee = null;
     _restaurant = null;
@@ -104,16 +99,13 @@ class AuthProvider extends ChangeNotifier {
       if (rawCustomer is Map<String, dynamic>) {
         _accountType = AuthAccountType.customer;
         _currentCustomer = Customer.fromJson(rawCustomer);
-        _currentUser = _safeUserFromJson(rawCustomer);
       } else if (rawEmployee is Map<String, dynamic>) {
         _accountType = AuthAccountType.employee;
         _currentEmployee = Employee.fromJson(rawEmployee);
-        _currentUser = _userFromEmployee(_currentEmployee!);
       } else if (rawAdmin is Map<String, dynamic>) {
         // Optional compatibility if your backend ever returns admin.
         _accountType = AuthAccountType.employee;
         _currentEmployee = Employee.fromJson(rawAdmin);
-        _currentUser = _userFromEmployee(_currentEmployee!);
       } else if (rawUser is Map<String, dynamic>) {
         // Fallback for old backend responses.
         if (role == 'customer') {
@@ -123,7 +115,6 @@ class AuthProvider extends ChangeNotifier {
           _accountType = AuthAccountType.employee;
           _currentEmployee = Employee.fromJson(rawUser);
         }
-        _currentUser = _safeUserFromJson(rawUser);
       } else {
         throw Exception('Unexpected server response: missing customer/employee data');
       }
@@ -171,12 +162,8 @@ class AuthProvider extends ChangeNotifier {
 
       if (isCustomer) {
         _currentCustomer = Customer.fromJson(rawUser);
-        _currentUser = _safeUserFromJson(rawUser);
       } else if (isEmployee) {
         _currentEmployee = Employee.fromJson(rawUser);
-        _currentUser = _userFromEmployee(_currentEmployee!);
-      } else {
-        _currentUser = _safeUserFromJson(rawUser);
       }
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
@@ -184,18 +171,5 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
-  }
-
-  User _safeUserFromJson(Map<String, dynamic> json) {
-    return User.fromJson(json);
-  }
-
-  User _userFromEmployee(Employee employee) {
-    return User.fromJson({
-      '_id': employee.id,
-      'id': employee.id,
-      'name': employee.name,
-      'email': employee.email ?? '',
-    });
   }
 }

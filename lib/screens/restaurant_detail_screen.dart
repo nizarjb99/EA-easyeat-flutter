@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../models/restaurant.dart';
-import '../providers/auth_provider.dart';
-import '../services/restaurant_service.dart';
 
 class RestaurantDetailScreen extends StatefulWidget {
   final Restaurant restaurant;
@@ -15,9 +12,7 @@ class RestaurantDetailScreen extends StatefulWidget {
 }
 
 class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
-  final RestaurantService _restaurantService = RestaurantService();
   late Restaurant _restaurant;
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -27,10 +22,12 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final profile = _restaurant.profile;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: Text(_restaurant.name),
+        title: Text(profile.name),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.white,
@@ -70,16 +67,23 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    _restaurant.name,
+                    profile.name,
                     style: const TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
                   ),
-                  const Text(
-                    'Restaurante Premium EasyEat',
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  const SizedBox(height: 4),
+                  Text(
+                    profile.category.join(', '),
+                    style: const TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    profile.description,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.black54, fontSize: 14),
                   ),
                 ],
               ),
@@ -101,9 +105,21 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  _buildInfoTile(Icons.people, 'Empleados', '${_restaurant.employees.length} registrados'),
-                  _buildInfoTile(Icons.location_on, 'Ubicación', 'Consultar mapa'),
-                  _buildInfoTile(Icons.star, 'Puntos requeridos', 'Ver tabla de premios'),
+                  _buildInfoTile(
+                    Icons.people, 
+                    'Empleados', 
+                    '${_restaurant.employees?.length ?? 0} registrados'
+                  ),
+                  _buildInfoTile(
+                    Icons.location_on, 
+                    'Ubicación', 
+                    '${profile.location.address ?? profile.location.city}'
+                  ),
+                  _buildInfoTile(
+                    Icons.star, 
+                    'Puntuación Global', 
+                    '${profile.globalRating.toStringAsFixed(1)} / 10'
+                  ),
                 ],
               ),
             ),
@@ -123,6 +139,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 40),
           ],
         ),
       ),
