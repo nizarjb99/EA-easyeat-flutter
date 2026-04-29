@@ -8,6 +8,8 @@ import 'screens/_auth/landing_screen.dart';
 import 'screens/_auth/login_screen.dart';
 import 'screens/_auth/register_screen.dart';
 import 'screens/app_entry_point.dart';
+import 'screens/_employee/add_visit_screen.dart';
+
 
 void main() {
   runApp(
@@ -37,6 +39,7 @@ class EventManagerApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/dashboard': (context) => const DashboardRouterScreen(),
+        '/add-visit': (context) => const AddVisitScreen(), // Add this line
       },
     );
   }

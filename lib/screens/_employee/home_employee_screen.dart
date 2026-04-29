@@ -6,6 +6,8 @@ import '../../models/visit.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/restaurant_service.dart';
 import '../../utils/styles.dart';
+import '../_employee/customer_qr_scanner_screen.dart';
+
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const Color _orange = Color(0xFFFF7A1A);
@@ -480,20 +482,27 @@ class _QuickActions extends StatelessWidget {
           sublabel: 'Scan & approve redemption',
           color: _blue,
           onTap: () {
-            // TODO: navigate to redeem-reward flow
-            // Creates RewardRedemption { status: 'redeemed', employee_id, pointsUsed }
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const CustomerQrScannerScreen(),
+              ),
+            );
           },
         ),
         // Add Visit & Points — creates Visit + updates PointsWallet
         _ActionButton(
           icon: Icons.add_circle_outline,
-          label: 'Add Visit & Points',
-          sublabel: 'Register visit · award points',
+          label: 'Add Visit & Assign Points',
+          sublabel: 'Scan customer to assign points',
           color: _green,
           onTap: () {
-            // TODO: navigate to add-visit flow
-            // Creates Visit { customer_id, restaurant_id, employee_id, pointsEarned, billAmount }
-            // Then updates PointsWallet.points for that customer+restaurant
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const CustomerQrScannerScreen(),
+              ),
+            );
           },
         ),
         if (isOwner)
