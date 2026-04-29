@@ -2,6 +2,7 @@ class Visit {
   final String id;
   final String customerId;
   final String? customerName;
+  final String employeeId;
   final String restaurantId;
   final DateTime date;
   final double pointsEarned;
@@ -14,6 +15,7 @@ class Visit {
     required this.id,
     required this.customerId,
     this.customerName,
+    required this.employeeId,
     required this.restaurantId,
     required this.date,
     this.pointsEarned = 0.0,
@@ -37,12 +39,24 @@ class Visit {
       cName = json['customer_name']?.toString();
     }
 
+    // employee_id can also be a String or a populated Map
+    String eId = '';
+    if (json['employee_id'] is Map<String, dynamic>) {
+      final eMap = json['employee_id'] as Map<String, dynamic>;
+      eId = (eMap['_id'] ?? eMap['id'] ?? '').toString();
+    } else {
+      eId = (json['employee_id'] ?? '').toString();
+    }
+
     return Visit(
       id: (json['_id'] ?? json['id'] ?? '').toString(),
       customerId: cId,
       customerName: cName,
+      employeeId: eId,
       restaurantId: (json['restaurant_id'] ?? '').toString(),
-      date: DateTime.parse(json['date'] ?? json['createdAt'] ?? DateTime.now().toIso8601String()),
+      date: DateTime.parse(
+        json['date'] ?? json['createdAt'] ?? DateTime.now().toIso8601String(),
+      ),
       pointsEarned: (json['pointsEarned'] ?? 0).toDouble(),
       billAmount: (json['billAmount'] ?? 0).toDouble(),
       deletedAt: json['deletedAt'] != null ? DateTime.parse(json['deletedAt']) : null,
@@ -55,6 +69,7 @@ class Visit {
     return {
       '_id': id,
       'customer_id': customerId,
+      'employee_id': employeeId,
       'restaurant_id': restaurantId,
       'date': date.toIso8601String(),
       'pointsEarned': pointsEarned,

@@ -30,17 +30,16 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
   Future<void> _handleQrDetection(BarcodeCapture barcodes) async {
     if (_isProcessing || _scannedCustomerId != null) return;
 
-    final barcode = barcodes.barcodes.firstOrNull;
-    if (barcode?.rawValue == null || barcode!.rawValue!.isEmpty) return;
+    // Avoid using firstOrNull if you want simpler/safer behavior
+    final barcode = barcodes.barcodes.isNotEmpty ? barcodes.barcodes.first : null;
+    final rawValue = barcode?.rawValue?.trim();
 
-    final customerId = barcode.rawValue!.trim();
+    if (rawValue == null || rawValue.isEmpty) return;
 
     setState(() {
       _isProcessing = true;
-      _scannedCustomerId = customerId;
+      _scannedCustomerId = rawValue;
     });
-
-    if (!mounted) return;
 
     try {
       final auth = context.read<AuthProvider>();
@@ -52,12 +51,11 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
         return;
       }
 
-      // Verify customer exists by fetching their data
-      final customer = await _customerService.getCustomerById(customerId, token);
+      // Verify customer exists
+      final customer = await _customerService.getCustomerById(rawValue, token);
 
       if (!mounted) return;
 
-      // Success: navigate to visit form and pass customer data
       Navigator.pushReplacementNamed(
         context,
         '/add-visit',
@@ -67,13 +65,16 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
           'customerEmail': customer.email,
         },
       );
-    } catch (e) {
-      _showError('Customer not found or network error');
+    } catch (_) {
+      if (!mounted) return;
+
+      _showError('This QR code does not belong to a registered EasyEat customer.');
       _reset();
     }
   }
 
   void _reset() {
+    if (!mounted) return;
     setState(() {
       _isProcessing = false;
       _scannedCustomerId = null;
