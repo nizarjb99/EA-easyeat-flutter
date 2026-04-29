@@ -7,13 +7,37 @@ import '../../providers/auth_provider.dart';
 import '../../services/restaurant_service.dart';
 import '../../utils/styles.dart';
 
+// ─── Palette ──────────────────────────────────────────────────────────────────
 const Color _orange = Color(0xFFFF7A1A);
 const Color _green = Color(0xFF16A34A);
+const Color _blue = Color(0xFF2563EB);
+const Color _amber = Color(0xFFD97706);
+const Color _red = Color(0xFFDC2626);
 const Color _dark = Color(0xFF0F172A);
 const Color _grey = Color(0xFF64748B);
 const Color _background = Color(0xFFF8FAFC);
 const Color _cardBorder = Color(0xFFE2E8F0);
 
+// ─── Fake activity-feed entry (replace with real model when API is ready) ─────
+enum _FeedType { visit, redemption, review }
+
+class _FeedEntry {
+  final _FeedType type;
+  final String text;
+  final DateTime time;
+  const _FeedEntry({required this.type, required this.text, required this.time});
+}
+
+// ─── Fake alert entry ─────────────────────────────────────────────────────────
+enum _AlertSeverity { warning, info }
+
+class _AlertEntry {
+  final _AlertSeverity severity;
+  final String message;
+  const _AlertEntry({required this.severity, required this.message});
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
 class HomeEmployeeScreen extends StatefulWidget {
   const HomeEmployeeScreen({super.key});
 
@@ -23,9 +47,70 @@ class HomeEmployeeScreen extends StatefulWidget {
 
 class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
   final RestaurantService _service = RestaurantService();
+
+  // ── raw data from backend ──────────────────────────────────────────────────
   List<Visit> _visits = [];
   bool _isLoading = true;
 
+  // ── today's window ─────────────────────────────────────────────────────────
+  DateTime get _todayStart {
+    final n = DateTime.now();
+    return DateTime(n.year, n.month, n.day);
+  }
+
+  // ── KPI helpers (derived from Visit / Review / RewardRedemption models) ────
+
+  /// pointsEarned (Visit.pointsEarned) summed for today
+  int get _pointsGivenToday {
+    return _visits
+        .where((v) => !v.date.isBefore(_todayStart) && v.deletedAt == null)
+        .fold(0, (sum, v) => sum + v.pointsEarned.toInt());
+  }
+
+  /// count of non-deleted visits today (Visit.deletedAt == null)
+  int get _visitsToday {
+    return _visits
+        .where((v) => !v.date.isBefore(_todayStart) && v.deletedAt == null)
+        .length;
+  }
+
+  /// placeholder — replace with RewardRedemption API call
+  /// (RewardRedemption.status == 'redeemed', filtered by date)
+  int get _redeemedToday => 0;
+
+  /// placeholder — replace with Review API call
+  /// (Review.globalRating, Review.deleted == false)
+  double? get _avgRatingToday => null;
+
+  // ── Activity feed (stub — replace with real API / websocket) ───────────────
+  List<_FeedEntry> get _feedEntries {
+    final entries = <_FeedEntry>[];
+    for (final v in _visits.take(5)) {
+      // Visit model: customerName, pointsEarned, date
+      entries.add(_FeedEntry(
+        type: _FeedType.visit,
+        text: '${_textOrFallback(v.customerName, 'Cliente')} earned ${v.pointsEarned.toInt()} points',
+        time: v.date,
+      ));
+    }
+    return entries;
+  }
+
+  // ── Alerts (derived from real data; extend with review/stats API) ──────────
+  List<_AlertEntry> get _alerts {
+    final list = <_AlertEntry>[];
+    if (_visitsToday == 0 && !_isLoading) {
+      list.add(const _AlertEntry(
+        severity: _AlertSeverity.info,
+        message: 'Fewer visits than usual today.',
+      ));
+    }
+    // Extend: pull Review.ratings.staffService average; if < 6 add warning
+    // Extend: pull Statistics.loyalCustomers trend
+    return list;
+  }
+
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
@@ -51,25 +136,22 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
       );
 
       if (!mounted) return;
-
       setState(() {
         _visits = visits;
         _isLoading = false;
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
+  // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final employee = auth.currentEmployee;
     final restaurant = auth.restaurant ?? <String, dynamic>{};
-
     final profile = _mapOrEmpty(restaurant['profile']);
     final location = _mapOrEmpty(profile['location']);
 
@@ -96,10 +178,7 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
             const SizedBox(width: 8),
             const Text(
               'EasyEat',
-              style: TextStyle(
-                color: _dark,
-                fontWeight: FontWeight.w900,
-              ),
+              style: TextStyle(color: _dark, fontWeight: FontWeight.w900),
             ),
             const SizedBox(width: 10),
             _RoleBadge(role: role),
@@ -109,10 +188,7 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
           Center(
             child: Text(
               displayName,
-              style: const TextStyle(
-                color: _dark,
-                fontWeight: FontWeight.w700,
-              ),
+              style: const TextStyle(color: _dark, fontWeight: FontWeight.w700),
             ),
           ),
           IconButton(
@@ -128,259 +204,101 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : RefreshIndicator(
-              onRefresh: _loadDashboardData,
-              color: AppColors.primary,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _RestaurantHero(
-                      restaurantName: restaurantName,
-                      city: restCity,
-                      address: restAddress,
-                      rating: rating,
-                    ),
-                    const SizedBox(height: 22),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final cards = [
-                          _StatCard(
-                            icon: Icons.trending_up,
-                            value: _visits.length.toString(),
-                            label: 'Visitas recientes',
-                            color: _orange,
-                          ),
-                          _StatCard(
-                            icon: Icons.people_outline,
-                            value: _uniqueCustomers.toString(),
-                            label: 'Clientes únicos',
-                            color: _green,
-                          ),
-                          _StatCard(
-                            icon: Icons.star_outline,
-                            value: _formatRating(rating),
-                            label: 'Valoración media',
-                            color: _orange,
-                          ),
-                        ];
-
-                        if (constraints.maxWidth >= 760) {
-                          return Row(
-                            children: [
-                              Expanded(child: cards[0]),
-                              const SizedBox(width: 12),
-                              Expanded(child: cards[1]),
-                              const SizedBox(width: 12),
-                              Expanded(child: cards[2]),
-                            ],
-                          );
-                        }
-
-                        return Column(
-                          children: [
-                            cards[0],
-                            const SizedBox(height: 12),
-                            cards[1],
-                            const SizedBox(height: 12),
-                            cards[2],
-                          ],
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 28),
-                    const Text(
-                      'Acciones rápidas',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: _dark,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final actions = [
-                          const _ActionCard(
-                            icon: Icons.qr_code_2,
-                            title: 'Generar QR',
-                            subtitle: 'Escaneo de visita',
-                            color: _orange,
-                          ),
-                          const _ActionCard(
-                            icon: Icons.list_alt,
-                            title: 'Ver visitas',
-                            subtitle: 'Historial completo',
-                            color: _green,
-                          ),
-                          if (isOwner)
-                            const _ActionCard(
-                              icon: Icons.settings_outlined,
-                              title: 'Configuración',
-                              subtitle: 'Ajustes del local',
-                              color: _orange,
-                            ),
-                        ];
-
-                        if (constraints.maxWidth >= 760) {
-                          return Row(
-                            children: [
-                              Expanded(child: actions[0]),
-                              const SizedBox(width: 12),
-                              Expanded(child: actions[1]),
-                              if (isOwner) ...[
-                                const SizedBox(width: 12),
-                                Expanded(child: actions[2]),
-                              ],
-                            ],
-                          );
-                        }
-
-                        return Column(
-                          children: [
-                            actions[0],
-                            const SizedBox(height: 12),
-                            actions[1],
-                            if (isOwner) ...[
-                              const SizedBox(height: 12),
-                              actions[2],
-                            ],
-                          ],
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 28),
-                    const Text(
-                      'Visitas recientes',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: _dark,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    _buildVisitsList(),
-                    const SizedBox(height: 40),
-                  ],
-                ),
+        onRefresh: _loadDashboardData,
+        color: AppColors.primary,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Restaurant Hero ──────────────────────────────────────
+              _RestaurantHero(
+                restaurantName: restaurantName,
+                city: restCity,
+                address: restAddress,
+                rating: rating,
               ),
-            ),
-    );
-  }
 
-  int get _uniqueCustomers {
-    return _visits.map((v) => v.customerId).toSet().length;
-  }
+              const SizedBox(height: 28),
 
-  Widget _buildVisitsList() {
-    if (_visits.isEmpty) {
-      return const _EmptyVisitsCard();
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _cardBorder),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: _visits.take(5).map((visit) => _buildVisitItem(visit)).toList(),
-      ),
-    );
-  }
-
-  Widget _buildVisitItem(Visit visit) {
-    final initial = _initial(visit.customerName, fallback: 'C');
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: _cardBorder),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  _orange.withOpacity(0.18),
-                  _green.withOpacity(0.14),
+              // ════════════════════════════════════════════════════════
+              // 1. KPI CARDS
+              // ════════════════════════════════════════════════════════
+              _SectionTitle(title: 'Today\'s Overview', icon: Icons.bar_chart_rounded),
+              const SizedBox(height: 14),
+              _KpiGrid(
+                cards: [
+                  _KpiCard(
+                    icon: Icons.stars_rounded,
+                    label: 'Points given today',
+                    value: _pointsGivenToday.toString(),
+                    color: _orange,
+                  ),
+                  _KpiCard(
+                    icon: Icons.people_alt_outlined,
+                    label: 'Visits today',
+                    value: _visitsToday.toString(),
+                    color: _green,
+                  ),
+                  _KpiCard(
+                    icon: Icons.card_giftcard_outlined,
+                    label: 'Rewards redeemed',
+                    // Replace with RewardRedemption count (status=='redeemed')
+                    value: _redeemedToday.toString(),
+                    color: _blue,
+                  ),
+                  _KpiCard(
+                    icon: Icons.star_half_rounded,
+                    label: 'Avg rating today',
+                    // Replace with avg of Review.globalRating (deleted==false)
+                    value: _avgRatingToday != null
+                        ? _avgRatingToday!.toStringAsFixed(1)
+                        : _formatRating(rating),
+                    color: _amber,
+                  ),
                 ],
               ),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              initial,
-              style: const TextStyle(
-                color: _dark,
-                fontWeight: FontWeight.w900,
-                fontSize: 16,
-              ),
-            ),
-          ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _textOrFallback(visit.customerName, 'Cliente'),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                    color: _dark,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.access_time,
-                      size: 14,
-                      color: _grey,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${visit.date.day}/${visit.date.month}/${visit.date.year}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: _grey,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+
+              const SizedBox(height: 28),
+
+              // ════════════════════════════════════════════════════════
+              // 2. QUICK ACTIONS
+              // ════════════════════════════════════════════════════════
+              _SectionTitle(title: 'Quick Actions', icon: Icons.bolt_rounded),
+              const SizedBox(height: 14),
+              _QuickActions(isOwner: isOwner),
+
+              const SizedBox(height: 28),
+
+              // ════════════════════════════════════════════════════════
+              // 3. LIVE ACTIVITY FEED
+              // ════════════════════════════════════════════════════════
+              _SectionTitle(title: 'Live Activity Feed', icon: Icons.stream),
+              const SizedBox(height: 14),
+              _ActivityFeed(entries: _feedEntries, visits: _visits),
+
+              const SizedBox(height: 28),
+
+              // ════════════════════════════════════════════════════════
+              // 4. ALERTS & INSIGHTS
+              // ════════════════════════════════════════════════════════
+              if (_alerts.isNotEmpty) ...[
+                _SectionTitle(title: 'Alerts & Insights', icon: Icons.notifications_active_outlined),
+                const SizedBox(height: 14),
+                _AlertsPanel(alerts: _alerts),
+                const SizedBox(height: 28),
               ],
-            ),
+
+              const SizedBox(height: 16),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.accent.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '+${visit.pointsEarned.toInt()} pts',
-              style: const TextStyle(
-                color: AppColors.accent,
-                fontWeight: FontWeight.w900,
-                fontSize: 14,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Icon(Icons.chevron_right, color: _grey),
-        ],
+        ),
       ),
     );
   }
+
+  // ── Utilities ──────────────────────────────────────────────────────────────
 
   static String _formatRating(dynamic value) {
     if (value == null) return '-';
@@ -389,10 +307,8 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
     return number.toStringAsFixed(1);
   }
 
-  Map<String, dynamic> _mapOrEmpty(dynamic value) {
-    if (value is Map<String, dynamic>) return value;
-    return <String, dynamic>{};
-  }
+  Map<String, dynamic> _mapOrEmpty(dynamic value) =>
+      value is Map<String, dynamic> ? value : <String, dynamic>{};
 
   String _textOrFallback(dynamic value, String fallback) {
     final text = value?.toString().trim() ?? '';
@@ -410,52 +326,475 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
     return text.split(RegExp(r'\s+')).first;
   }
 
-  String _initial(dynamic value, {String fallback = 'U'}) {
-    final text = value?.toString().trim() ?? '';
-    if (text.isEmpty) return fallback;
-    return text[0].toUpperCase();
-  }
-
   String? _restaurantId(
-    Map<String, dynamic> restaurant,
-    Map<String, dynamic> profile,
-  ) {
+      Map<String, dynamic> restaurant,
+      Map<String, dynamic> profile,
+      ) {
     final dynamic rawId =
         restaurant['_id'] ?? profile['_id'] ?? restaurant['id'] ?? profile['id'];
-
     final id = rawId?.toString().trim();
     if (id == null || id.isEmpty) return null;
     return id;
   }
 }
 
-class _RoleBadge extends StatelessWidget {
-  final String role;
-  const _RoleBadge({required this.role});
+// ═════════════════════════════════════════════════════════════════════════════
+// SECTION TITLE
+// ═════════════════════════════════════════════════════════════════════════════
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  const _SectionTitle({required this.title, required this.icon});
 
   @override
   Widget build(BuildContext context) {
-    final isOwner = role == 'owner';
-    final badgeColor = isOwner ? _orange : _green;
+    return Row(
+      children: [
+        Icon(icon, color: _orange, size: 20),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            color: _dark,
+          ),
+        ),
+      ],
+    );
+  }
+}
 
+// ═════════════════════════════════════════════════════════════════════════════
+// 1. KPI CARDS
+// ═════════════════════════════════════════════════════════════════════════════
+class _KpiCard {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+  const _KpiCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+}
+
+class _KpiGrid extends StatelessWidget {
+  final List<_KpiCard> cards;
+  const _KpiGrid({required this.cards});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final crossCount = constraints.maxWidth >= 600 ? 4 : 2;
+      return GridView.count(
+        crossAxisCount: crossCount,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.25,
+        children: cards.map((c) => _KpiTile(card: c)).toList(),
+      );
+    });
+  }
+}
+
+class _KpiTile extends StatelessWidget {
+  final _KpiCard card;
+  const _KpiTile({required this.card});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: badgeColor.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(999),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      child: Text(
-        role.toUpperCase(),
-        style: TextStyle(
-          color: badgeColor,
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: card.color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(card.icon, color: card.color, size: 20),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                card.value,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: _dark,
+                ),
+              ),
+              Text(
+                card.label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: _grey,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 2. QUICK ACTIONS
+// ═════════════════════════════════════════════════════════════════════════════
+class _QuickActions extends StatelessWidget {
+  final bool isOwner;
+  const _QuickActions({required this.isOwner});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final wide = constraints.maxWidth >= 600;
+      final actions = <Widget>[
+        // Redeem Reward — triggers RewardRedemption creation
+        // (status: 'pending' → employee marks as 'redeemed')
+        _ActionButton(
+          icon: Icons.card_giftcard_rounded,
+          label: 'Redeem Reward',
+          sublabel: 'Scan & approve redemption',
+          color: _blue,
+          onTap: () {
+            // TODO: navigate to redeem-reward flow
+            // Creates RewardRedemption { status: 'redeemed', employee_id, pointsUsed }
+          },
+        ),
+        // Add Visit & Points — creates Visit + updates PointsWallet
+        _ActionButton(
+          icon: Icons.add_circle_outline,
+          label: 'Add Visit & Points',
+          sublabel: 'Register visit · award points',
+          color: _green,
+          onTap: () {
+            // TODO: navigate to add-visit flow
+            // Creates Visit { customer_id, restaurant_id, employee_id, pointsEarned, billAmount }
+            // Then updates PointsWallet.points for that customer+restaurant
+          },
+        ),
+        if (isOwner)
+          _ActionButton(
+            icon: Icons.settings_outlined,
+            label: 'Settings',
+            sublabel: 'Restaurant configuration',
+            color: _orange,
+            onTap: () {
+              // TODO: navigate to settings
+            },
+          ),
+      ];
+
+      if (wide) {
+        return Row(
+          children: [
+            for (int i = 0; i < actions.length; i++) ...[
+              if (i > 0) const SizedBox(width: 12),
+              Expanded(child: actions[i]),
+            ]
+          ],
+        );
+      }
+
+      return Column(
+        children: [
+          for (int i = 0; i < actions.length; i++) ...[
+            if (i > 0) const SizedBox(height: 12),
+            actions[i],
+          ]
+        ],
+      );
+    });
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String sublabel;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.sublabel,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _cardBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              height: 44,
+              width: 44,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        color: _dark,
+                      )),
+                  const SizedBox(height: 2),
+                  Text(sublabel,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: _grey,
+                        fontWeight: FontWeight.w500,
+                      )),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: color),
+          ],
         ),
       ),
     );
   }
 }
 
+// ═════════════════════════════════════════════════════════════════════════════
+// 3. LIVE ACTIVITY FEED
+// ═════════════════════════════════════════════════════════════════════════════
+class _ActivityFeed extends StatelessWidget {
+  final List<_FeedEntry> entries;
+  final List<Visit> visits;
+
+  const _ActivityFeed({required this.entries, required this.visits});
+
+  @override
+  Widget build(BuildContext context) {
+    if (entries.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _cardBorder),
+        ),
+        child: const Column(
+          children: [
+            Icon(Icons.stream, size: 36, color: _orange),
+            SizedBox(height: 12),
+            Text(
+              'No recent activity',
+              style: TextStyle(
+                  fontWeight: FontWeight.w800, fontSize: 16, color: _dark),
+            ),
+            SizedBox(height: 6),
+            Text(
+              'Activity will appear here as visits and rewards are registered.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: _grey, fontSize: 13),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _cardBorder),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: entries
+            .asMap()
+            .entries
+            .map((e) => _FeedTile(entry: e.value, isLast: e.key == entries.length - 1))
+            .toList(),
+      ),
+    );
+  }
+}
+
+class _FeedTile extends StatelessWidget {
+  final _FeedEntry entry;
+  final bool isLast;
+  const _FeedTile({required this.entry, required this.isLast});
+
+  IconData get _icon {
+    switch (entry.type) {
+      case _FeedType.visit:
+        return Icons.stars_rounded;
+      case _FeedType.redemption:
+        return Icons.card_giftcard_rounded;
+      case _FeedType.review:
+        return Icons.star_rounded;
+    }
+  }
+
+  Color get _color {
+    switch (entry.type) {
+      case _FeedType.visit:
+        return _green;
+      case _FeedType.redemption:
+        return _blue;
+      case _FeedType.review:
+        return _amber;
+    }
+  }
+
+  String _timeLabel() {
+    final now = DateTime.now();
+    final diff = now.difference(entry.time);
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${entry.time.day}/${entry.time.month}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        border: isLast
+            ? null
+            : const Border(bottom: BorderSide(color: _cardBorder)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            height: 38,
+            width: 38,
+            decoration: BoxDecoration(
+              color: _color.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(_icon, color: _color, size: 18),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              entry.text,
+              style: const TextStyle(
+                fontSize: 14,
+                color: _dark,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Text(
+            _timeLabel(),
+            style: const TextStyle(fontSize: 12, color: _grey),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 4. ALERTS & INSIGHTS
+// ═════════════════════════════════════════════════════════════════════════════
+class _AlertsPanel extends StatelessWidget {
+  final List<_AlertEntry> alerts;
+  const _AlertsPanel({required this.alerts});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: alerts
+          .asMap()
+          .entries
+          .map((e) => Padding(
+        padding: EdgeInsets.only(bottom: e.key < alerts.length - 1 ? 10 : 0),
+        child: _AlertTile(alert: e.value),
+      ))
+          .toList(),
+    );
+  }
+}
+
+class _AlertTile extends StatelessWidget {
+  final _AlertEntry alert;
+  const _AlertTile({required this.alert});
+
+  @override
+  Widget build(BuildContext context) {
+    final isWarning = alert.severity == _AlertSeverity.warning;
+    final color = isWarning ? _red : _blue;
+    final bg = color.withOpacity(0.06);
+    final emoji = isWarning ? '⚠️' : '📉';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              alert.message,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// RESTAURANT HERO
+// ═════════════════════════════════════════════════════════════════════════════
 class _RestaurantHero extends StatelessWidget {
   final String restaurantName;
   final String? city;
@@ -484,19 +823,19 @@ class _RestaurantHero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Gestionando',
+            'Managing',
             style: TextStyle(
               color: Colors.white70,
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             restaurantName,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 34,
+              fontSize: 30,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -506,10 +845,7 @@ class _RestaurantHero extends StatelessWidget {
             runSpacing: 10,
             children: [
               if (city != null && city!.isNotEmpty)
-                _HeroTag(
-                  icon: Icons.location_on_outlined,
-                  text: city!,
-                ),
+                _HeroTag(icon: Icons.location_on_outlined, text: city!),
               if (rating != null)
                 _HeroTag(
                   icon: Icons.star,
@@ -518,12 +854,13 @@ class _RestaurantHero extends StatelessWidget {
             ],
           ),
           if (address != null && address!.isNotEmpty) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Text(
               '📍 $address',
               style: const TextStyle(
                 color: Colors.white70,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
               ),
             ),
           ],
@@ -536,11 +873,7 @@ class _RestaurantHero extends StatelessWidget {
 class _HeroTag extends StatelessWidget {
   final IconData icon;
   final String text;
-
-  const _HeroTag({
-    required this.icon,
-    required this.text,
-  });
+  const _HeroTag({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -553,13 +886,14 @@ class _HeroTag extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white, size: 16),
+          Icon(icon, color: Colors.white, size: 15),
           const SizedBox(width: 6),
           Text(
             text,
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w800,
+              fontSize: 13,
             ),
           ),
         ],
@@ -568,170 +902,30 @@ class _HeroTag extends StatelessWidget {
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
-
-  const _StatCard({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
-  });
+// ═════════════════════════════════════════════════════════════════════════════
+// ROLE BADGE (AppBar)
+// ═════════════════════════════════════════════════════════════════════════════
+class _RoleBadge extends StatelessWidget {
+  final String role;
+  const _RoleBadge({required this.role});
 
   @override
   Widget build(BuildContext context) {
+    final isOwner = role == 'owner';
+    final badgeColor = isOwner ? _orange : _green;
     return Container(
-      height: 118,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: badgeColor.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(999),
       ),
-      child: Row(
-        children: [
-          Container(
-            height: 46,
-            width: 46,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(width: 14),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  color: _dark,
-                ),
-              ),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: _grey,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActionCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
-
-  const _ActionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _cardBorder),
-      ),
-      child: Row(
-        children: [
-          Container(
-            height: 52,
-            width: 52,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: color, size: 28),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: _dark,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: _grey,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.chevron_right, color: _grey),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyVisitsCard extends StatelessWidget {
-  const _EmptyVisitsCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _cardBorder),
-      ),
-      child: const Column(
-        children: [
-          Icon(Icons.access_time, size: 40, color: _orange),
-          SizedBox(height: 12),
-          Text(
-            'No hay visitas registradas todavía',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: _dark,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'El login de employee ya detecta owner/staff. El siguiente paso es conectar /restaurants/:id/visits.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: _grey),
-          ),
-        ],
+      child: Text(
+        role.toUpperCase(),
+        style: TextStyle(
+          color: badgeColor,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }
