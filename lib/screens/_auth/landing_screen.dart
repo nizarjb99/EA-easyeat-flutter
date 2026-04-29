@@ -416,6 +416,30 @@ class _HowItWorksSection extends StatelessWidget {
         builder: (context, constraints) {
           final isMobile = constraints.maxWidth < 800;
 
+          final steps = const [
+            _HowItWorksStep(
+              step: '1',
+              title: 'Descubre',
+              description:
+                  'Explora una amplia selección de restaurantes cerca de ti, filtra por tipo de cocina, ambiente o promociones.',
+              icon: Icons.search,
+            ),
+            _HowItWorksStep(
+              step: '2',
+              title: 'Reserva',
+              description:
+                  'Reserva tu mesa en segundos, elige la hora y el número de comensales. ¡Sin esperas ni complicaciones!',
+              icon: Icons.calendar_today,
+            ),
+            _HowItWorksStep(
+              step: '3',
+              title: 'Disfruta',
+              description:
+                  'Acude a tu reserva, disfruta de tu comida y acumula puntos para canjear por descuentos y experiencias exclusivas.',
+              icon: Icons.celebration,
+            ),
+          ];
+
           return Column(
             children: [
               Text(
@@ -428,45 +452,27 @@ class _HowItWorksSection extends StatelessWidget {
                     ),
               ),
               const SizedBox(height: 32),
-              Flex(
-                direction: isMobile ? Axis.vertical : Axis.horizontal,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Flexible(
-                    flex: 1,
-                    child: _HowItWorksStep(
-                      step: '1',
-                      title: 'Descubre',
-                      description:
-                          'Explora una amplia selección de restaurantes cerca de ti, filtra por tipo de cocina, ambiente o promociones.',
-                      icon: Icons.search,
-                    ),
-                  ),
-                  SizedBox(width: 24, height: 24),
-                  Flexible(
-                    flex: 1,
-                    child: _HowItWorksStep(
-                      step: '2',
-                      title: 'Reserva',
-                      description:
-                          'Reserva tu mesa en segundos, elige la hora y el número de comensales. ¡Sin esperas ni complicaciones!',
-                      icon: Icons.calendar_today,
-                    ),
-                  ),
-                  SizedBox(width: 24, height: 24),
-                  Flexible(
-                    flex: 1,
-                    child: _HowItWorksStep(
-                      step: '3',
-                      title: 'Disfruta',
-                      description:
-                          'Acude a tu reserva, disfruta de tu comida y acumula puntos para canjear por descuentos y experiencias exclusivas.',
-                      icon: Icons.celebration,
-                    ),
-                  ),
-                ],
-              ),
+              if (isMobile)
+                Column(
+                  children: [
+                    steps[0],
+                    const SizedBox(height: 24),
+                    steps[1],
+                    const SizedBox(height: 24),
+                    steps[2],
+                  ],
+                )
+              else
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: steps[0]),
+                    const SizedBox(width: 24),
+                    Expanded(child: steps[1]),
+                    const SizedBox(width: 24),
+                    Expanded(child: steps[2]),
+                  ],
+                ),
             ],
           );
         },

@@ -6,14 +6,6 @@ import '../../providers/auth_provider.dart';
 import '../../services/customer_service.dart';
 import '../../utils/styles.dart';
 
-// ─── Palette (matches home_employee_screen.dart) ──────────────────────────────
-const Color _orange = Color(0xFFFF7A1A);
-const Color _green = Color(0xFF16A34A);
-const Color _blue = Color(0xFF2563EB);
-const Color _dark = Color(0xFF0F172A);
-const Color _grey = Color(0xFF64748B);
-const Color _background = Color(0xFFF8FAFC);
-
 // ═════════════════════════════════════════════════════════════════════════════
 class CustomerQrScannerScreen extends StatefulWidget {
   const CustomerQrScannerScreen({super.key});
@@ -93,7 +85,7 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: const Color(0xFFDC2626),
+        backgroundColor: Colors.red.shade600,
         duration: const Duration(seconds: 2),
       ),
     );
@@ -106,22 +98,25 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _dark,
+      backgroundColor: AppColors.dashboardHeader,
       appBar: AppBar(
-        backgroundColor: _dark,
+        backgroundColor: AppColors.dashboardHeader,
         elevation: 0,
         title: const Text(
           'Scan Customer QR Code',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+          style: TextStyle(
+            color: AppColors.text,
+            fontWeight: FontWeight.w900,
+          ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.flashlight_on, color: _orange),
+            icon: const Icon(Icons.flashlight_on, color: AppColors.customer),
             tooltip: 'Toggle flash',
             onPressed: _toggleFlash,
           ),
@@ -141,13 +136,13 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
                     const Icon(
                       Icons.camera_alt_outlined,
                       size: 48,
-                      color: _orange,
+                      color: AppColors.customer,
                     ),
                     const SizedBox(height: 16),
-                    Text(
+                    const Text(
                       'Camera permission required',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppColors.text,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -157,7 +152,7 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
                       error.toString(),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        color: _grey,
+                        color: AppColors.textMuted,
                         fontSize: 12,
                       ),
                     ),
@@ -167,7 +162,7 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
             },
             placeholderBuilder: (context, child) {
               return const Center(
-                child: CircularProgressIndicator(color: _orange),
+                child: CircularProgressIndicator(color: AppColors.customer),
               );
             },
           ),
@@ -183,12 +178,12 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(color: _orange),
+                    CircularProgressIndicator(color: AppColors.customer),
                     SizedBox(height: 16),
                     Text(
                       'Verifying customer...',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.text,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -240,19 +235,19 @@ class _ScannerOverlay extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _orange.withOpacity(0.3)),
+                  border: Border.all(color: AppColors.customer.withOpacity(0.3)),
                 ),
                 child: Column(
                   children: [
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.info_outline, color: _orange, size: 16),
+                        Icon(Icons.info_outline, color: AppColors.customer, size: 16),
                         SizedBox(width: 8),
                         Text(
                           'Position the QR code in the frame',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.text,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
@@ -265,7 +260,7 @@ class _ScannerOverlay extends StatelessWidget {
                         'Make sure the code is clearly visible and well-lit',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: _grey,
+                          color: AppColors.textMuted,
                           fontSize: 11,
                         ),
                       ),
@@ -304,18 +299,18 @@ class _ScannerFramePainter extends CustomPainter {
 
     canvas.drawPath(path, bgPaint);
 
-    // Draw frame border (green)
+    // Draw frame border (employee green)
     final framePaint = Paint()
-      ..color = _green
+      ..color = AppColors.employee
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3;
 
     canvas.drawRect(frameRect, framePaint);
 
-    // Draw corner brackets
+    // Draw corner brackets (customer orange)
     final cornerSize = 24.0;
     final cornerPaint = Paint()
-      ..color = _orange
+      ..color = AppColors.customer
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4
       ..strokeCap = StrokeCap.round;
