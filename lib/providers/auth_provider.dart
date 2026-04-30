@@ -90,23 +90,43 @@ class AuthProvider extends ChangeNotifier {
       final dynamic rawEmployee = response['employee'];
       final dynamic rawAdmin = response['admin'];
       final dynamic rawUser = response['user'] ?? response['usuario'];
-      final dynamic rawRestaurant = response['restaurant'];
 
       _currentCustomer = null;
       _currentEmployee = null;
-      _restaurant = rawRestaurant is Map<String, dynamic> ? rawRestaurant : null;
+
+      final dynamic rawRestaurant = response['restaurant'];
+      Map<String, dynamic>? normalizedRestaurant;
+
+      if (rawRestaurant is Map<String, dynamic>) {
+        normalizedRestaurant = rawRestaurant;
+      } else if (rawRestaurant is String) {
+        normalizedRestaurant = {'id': rawRestaurant};
+      } else {
+        // maybe the restaurant is included inside employee/user object
+        final dynamic maybeUser = rawEmployee ?? rawUser;
+        if (maybeUser is Map<String, dynamic>) {
+          final empRest = maybeUser['restaurant'] ?? maybeUser['restaurant_id'] ?? maybeUser['restaurantId'];
+          if (empRest is Map<String, dynamic>) normalizedRestaurant = empRest;
+          else if (empRest is String) normalizedRestaurant = {'id': empRest};
+        }
+      }
+
+      _restaurant = normalizedRestaurant;
 
       if (rawCustomer is Map<String, dynamic>) {
         _accountType = AuthAccountType.customer;
         _currentCustomer = Customer.fromJson(rawCustomer);
-      } else if (rawEmployee is Map<String, dynamic>) {
+      }
+      else if (rawEmployee is Map<String, dynamic>) {
         _accountType = AuthAccountType.employee;
         _currentEmployee = Employee.fromJson(rawEmployee);
-      } else if (rawAdmin is Map<String, dynamic>) {
+      }
+      else if (rawAdmin is Map<String, dynamic>) {
         // Optional compatibility if your backend ever returns admin.
         _accountType = AuthAccountType.employee;
         _currentEmployee = Employee.fromJson(rawAdmin);
-      } else if (rawUser is Map<String, dynamic>) {
+      }
+      else if (rawUser is Map<String, dynamic>) {
         // Fallback for old backend responses.
         if (role == 'customer') {
           _accountType = AuthAccountType.customer;

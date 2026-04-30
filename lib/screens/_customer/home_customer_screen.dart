@@ -1,5 +1,7 @@
+import 'package:ea_easyeat_flutter/screens/_employee/home_employee_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'qr_code_screen.dart';
 
 import '../../providers/auth_provider.dart';
 
@@ -95,6 +97,8 @@ class HomeCustomerScreen extends StatelessWidget {
                 );
               },
             ),
+            const SizedBox(height: 22),
+            const _QuickActions(),
             const SizedBox(height: 28),
             TextField(
               decoration: InputDecoration(
@@ -180,6 +184,107 @@ class _StatCard extends StatelessWidget {
           Text(value, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: HomeCustomerScreen.dark)),
           Text(label, style: const TextStyle(color: HomeCustomerScreen.grey, fontWeight: FontWeight.w600)),
         ],
+      ),
+    );
+  }
+}
+
+class _QuickActions extends StatelessWidget {
+  const _QuickActions();
+
+  @override
+  Widget build(BuildContext context) {
+    return _ActionButton(
+      icon: Icons.qr_code_2_rounded,
+      label: 'Show my QR',
+      sublabel: 'Use it to earn or redeem points at the restaurant',
+      color: HomeCustomerScreen.orange,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const QRCodeScreen(),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String sublabel;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.sublabel,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              height: 44,
+              width: 44,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: HomeCustomerScreen.dark,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    sublabel,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: HomeCustomerScreen.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: color),
+          ],
+        ),
       ),
     );
   }

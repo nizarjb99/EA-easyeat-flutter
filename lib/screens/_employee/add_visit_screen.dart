@@ -30,14 +30,28 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
     super.dispose();
   }
 
-  String? _restaurantId(Map<String, dynamic>? restaurant) {
+  String? _restaurantId(dynamic restaurant) {
     if (restaurant == null) return null;
 
-    final dynamic rawId = restaurant['_id'] ?? restaurant['id'];
-    final id = rawId?.toString().trim();
-    if (id == null || id.isEmpty) return null;
+    // If the provider stored a plain string id
+    if (restaurant is String) {
+      final id = restaurant.trim();
+      return id.isEmpty ? null : id;
+    }
 
-    return id;
+    // If it's a Map, check multiple possible keys
+    if (restaurant is Map<String, dynamic>) {
+      final rawId = restaurant['_id'] ??
+          restaurant['id'] ??
+          restaurant['restaurant_id'] ??
+          restaurant['restaurantId'];
+      final id = rawId?.toString().trim();
+      if (id == null || id.isEmpty) return null;
+      return id;
+    }
+
+    // Unsupported shape
+    return null;
   }
 
   Future<void> _submitVisit({
@@ -48,8 +62,14 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
 
     final auth = context.read<AuthProvider>();
     final employeeId = auth.id;
-    final restaurantId = _restaurantId(auth.restaurant);
+
+    // Try provider restaurant first, then fallback to currentEmployee.restaurantId
+    final restaurantFromProvider = _restaurantId(auth.restaurant);
+    final restaurantFromEmployee = auth.currentEmployee?.restaurantId?.toString().trim();
+    final restaurantId = restaurantFromProvider ?? (restaurantFromEmployee != null && restaurantFromEmployee.isNotEmpty ? restaurantFromEmployee : null);
+
     final token = auth.accessToken;
+
 
     if (employeeId == null || employeeId.isEmpty) {
       _showError('Employee not authenticated');
@@ -57,7 +77,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
     }
 
     if (restaurantId == null || restaurantId.isEmpty) {
-      _showError('Restaurant not available');
+      _showError('No restaurant linked to this employee account');
       return;
     }
 
