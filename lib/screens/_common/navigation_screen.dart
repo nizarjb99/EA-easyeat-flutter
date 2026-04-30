@@ -3,10 +3,9 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../_employee/home_employee_screen.dart';
 import 'discover_screen.dart';
-import 'points_wallet_screen.dart';
-import '../_customer/qr_code_screen.dart';
 import 'profile_screen.dart';
-import '../_customer/home_customer_screen.dart'; // Import the new home customer screen
+import '../_customer/home_customer_screen.dart';
+import '../_customer/points_wallet_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});

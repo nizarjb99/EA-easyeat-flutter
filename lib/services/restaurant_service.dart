@@ -25,6 +25,32 @@ class RestaurantService {
         .toList();
   }
 
+  Future<Restaurant> fetchRestaurantById(String restaurantId, {String? accessToken}) async {
+    final uri = Uri.parse('$_baseUrl/$restaurantId');
+
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      if (accessToken != null && accessToken.isNotEmpty)
+        'Authorization': 'Bearer $accessToken',
+    };
+
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to load restaurant (${response.statusCode})');
+    }
+
+    final dynamic body = json.decode(response.body);
+
+    if (body is Map<String, dynamic>) {
+      final data = body['data'];
+      if (data is Map<String, dynamic>) return Restaurant.fromJson(data);
+      return Restaurant.fromJson(body);
+    }
+
+    throw Exception('Unexpected restaurant response format');
+  }
+
   Future<List<Visit>> fetchVisitsByRestaurant(String restaurantId, { String? accessToken, int page = 1, int limit = 10 }) async {
     // If your backend route differs, only change this path.
     final uri = Uri.parse(
