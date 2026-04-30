@@ -41,36 +41,15 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
       _scannedCustomerId = rawValue;
     });
 
-    try {
-      final auth = context.read<AuthProvider>();
-      final token = auth.accessToken;
-
-      if (token == null || token.isEmpty) {
-        _showError('Authentication required');
-        _reset();
-        return;
-      }
-
-      // Verify customer exists
-      final customer = await _customerService.getCustomerById(rawValue, token);
-
       if (!mounted) return;
 
       Navigator.pushReplacementNamed(
         context,
         '/add-visit',
         arguments: {
-          'customerId': customer.id,
-          'customerName': customer.name,
-          'customerEmail': customer.email,
+          'customerId': rawValue,
         },
       );
-    } catch (_) {
-      if (!mounted) return;
-
-      _showError('This QR code does not belong to a registered EasyEat customer.');
-      _reset();
-    }
   }
 
   void _reset() {

@@ -15,7 +15,7 @@ class QRCodeScreen extends StatelessWidget {
     final String customerName = authProvider.displayName;
     final String? customerEmail = authProvider.email;
 
-    if (customerId == null) {
+    if (customerId == null || customerId.isEmpty) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('My QR Code'),
