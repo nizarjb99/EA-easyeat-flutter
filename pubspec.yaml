@@ -38,6 +38,9 @@ dependencies:
   provider: ^6.1.2
   qr_flutter: ^4.1.0
   mobile_scanner: ^3.5.0
+  google_maps_flutter: ^2.5.3
+  geolocator: ^10.1.0
+  shared_preferences: ^2.2.0
 
 dev_dependencies:
   flutter_test:
