@@ -1,7 +1,10 @@
-// lib/screens/_common/map_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:ea_easyeat_flutter/models/restaurant.dart';
+import 'package:ea_easyeat_flutter/screens/_common/restaurant_card.dart';
+import 'package:ea_easyeat_flutter/screens/_common/restaurant_detail_screen.dart';
+
 import '../../providers/location_provider.dart';
 import '../../providers/restaurant_provider.dart';
 
@@ -17,10 +20,14 @@ class _MapScreenState extends State<MapScreen> {
   Set<Marker> _markers = {};
   bool _showNearby = false;
 
+  // New state for marker -> card interaction
+  Restaurant? _selectedRestaurant;
+  bool _cardVisible = false;
+
   @override
   void initState() {
     super.initState();
-    // Load all restaurants when map screen opens
+    // Load all restaurants when map screen opens (if not already loaded)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final restaurantProvider = context.read<RestaurantProvider>();
       if (restaurantProvider.allRestaurants.isEmpty) {
@@ -58,6 +65,15 @@ class _MapScreenState extends State<MapScreen> {
                 myLocationEnabled: locationProvider.permissionStatus ==
                     LocationPermissionStatus.granted,
                 myLocationButtonEnabled: false,
+                // Dismiss restaurant card when user taps on map
+                onTap: (_) {
+                  if (_cardVisible) {
+                    setState(() {
+                      _cardVisible = false;
+                      _selectedRestaurant = null;
+                    });
+                  }
+                },
               ),
 
               // Floating Action Button: "See Near Me"
@@ -65,7 +81,8 @@ class _MapScreenState extends State<MapScreen> {
                 bottom: 30,
                 right: 16,
                 child: FloatingActionButton.extended(
-                  onPressed: () => _handleSeeNearMe(context, locationProvider, restaurantProvider),
+                  onPressed: () => _handleSeeNearMe(
+                      context, locationProvider, restaurantProvider),
                   backgroundColor: const Color(0xFFFF7A1A),
                   label: const Text('📍 See Near Me'),
                   icon: const Icon(Icons.location_on),
@@ -82,11 +99,70 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                   ),
                 ),
+
+              // Restaurant card overlay (bottom)
+              if (_cardVisible && _selectedRestaurant != null)
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 110, // above the FAB
+                  child: _buildRestaurantCardOverlay(
+                    _selectedRestaurant!,
+                    locationProvider,
+                  ),
+                ),
             ],
           );
         },
       ),
     );
+  }
+
+  Widget _buildRestaurantCardOverlay(
+      Restaurant restaurant, LocationProvider locationProvider) {
+    final distance = _formatDistance(restaurant, locationProvider);
+
+    return RestaurantCard(
+      restaurant: restaurant,
+      distance: distance,
+      hasSpecialOffer: false,
+      onClick: () {
+        // Hide the overlay and navigate to detail
+        setState(() {
+          _cardVisible = false;
+        });
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                RestaurantDetailScreen(restaurant: restaurant),
+          ),
+        );
+      },
+    );
+  }
+
+  String _formatDistance(
+      Restaurant restaurant, LocationProvider locationProvider) {
+    final coords = restaurant.profile.location.coordinates.coordinates;
+    if (coords.length != 2) return "-- km";
+
+    if (locationProvider.currentPosition == null) {
+      return "-- km";
+    }
+
+    try {
+      final km = locationProvider.calculateDistance(
+        locationProvider.currentPosition!.latitude,
+        locationProvider.currentPosition!.longitude,
+        coords[1], // latitude
+        coords[0], // longitude
+      );
+      return "${km.toStringAsFixed(1)} km";
+    } catch (_) {
+      return "-- km";
+    }
   }
 
   void _handleSeeNearMe(
@@ -96,7 +172,7 @@ class _MapScreenState extends State<MapScreen> {
   ) async {
     // If permission already granted, just load nearby restaurants
     if (locationProvider.permissionStatus ==
-        LocationPermissionStatus.granted &&
+            LocationPermissionStatus.granted &&
         locationProvider.currentPosition != null) {
       await restaurantProvider.loadNearbyRestaurants(
         locationProvider.currentPosition!.latitude,
@@ -113,7 +189,7 @@ class _MapScreenState extends State<MapScreen> {
       await locationProvider.requestLocationPermission();
 
       if (locationProvider.permissionStatus ==
-          LocationPermissionStatus.granted &&
+              LocationPermissionStatus.granted &&
           locationProvider.currentPosition != null) {
         // Permission granted, load nearby restaurants
         await restaurantProvider.loadNearbyRestaurants(
@@ -207,6 +283,13 @@ class _MapScreenState extends State<MapScreen> {
           icon: BitmapDescriptor.defaultMarkerWithHue(
             _showNearby ? BitmapDescriptor.hueOrange : BitmapDescriptor.hueRed,
           ),
+          onTap: () {
+            // Show the RestaurantCard overlay for this restaurant
+            setState(() {
+              _selectedRestaurant = restaurant;
+              _cardVisible = true;
+            });
+          },
         ),
       );
     }
@@ -216,6 +299,7 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   void dispose() {
+    // map controller is initialized on onMapCreated; keep same dispose as before.
     _mapController.dispose();
     super.dispose();
   }
