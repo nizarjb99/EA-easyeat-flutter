@@ -55,6 +55,8 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
   // ── raw data from backend ──────────────────────────────────────────────────
   List<Visit> _visits = [];
   bool _isLoading = true;
+  bool _isStatsLoading = true;
+  Map<String, dynamic>? _restaurantData;
 
   // This value is loaded and kept for future use in the UI.
   // ignore: unused_field
@@ -128,43 +130,89 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
   Future<void> _loadDashboardData() async {
     try {
       final auth = context.read<AuthProvider>();
-      final restaurant = auth.restaurant ?? <String, dynamic>{};
-      final profile = _mapOrEmpty(restaurant['profile']);
-      final restaurantId = _restaurantId(restaurant, profile);
+      final restaurantFromProvider = _mapOrEmpty(auth.restaurant);
+      final profileFromProvider = _mapOrEmpty(restaurantFromProvider['profile']);
+      final employeeRestaurantId = auth.currentEmployee?.restaurantId.toString().trim();
+      final restaurantId = _restaurantId(restaurantFromProvider, profileFromProvider) ??
+          ((employeeRestaurantId != null && employeeRestaurantId.isNotEmpty) ? employeeRestaurantId : null);
       final employeeId = auth.currentEmployee?.id ?? auth.id;
 
       if (restaurantId == null) {
         if (!mounted) return;
-        setState(() => _isLoading = false);
+        setState(() {
+          _restaurantData = restaurantFromProvider.isNotEmpty ? restaurantFromProvider : null;
+          _isLoading = false;
+          _isStatsLoading = false;
+        });
         return;
       }
+
+      final needsRestaurantFetch = !_hasRestaurantProfile(restaurantFromProvider);
 
       final results = await Future.wait<dynamic>([
         _restaurantService.fetchVisitsByRestaurant(
           restaurantId,
           accessToken: auth.accessToken,
         ).catchError((_) => <Visit>[]),
-        employeeId == null
-            ? Future<EmployeeStatistics?>.value(null)
-            : _employeeService
-                .fetchEmployeeStatistics(
-                  employeeId,
+        needsRestaurantFetch
+            ? _restaurantService
+                .fetchRestaurantById(
+                  restaurantId,
                   accessToken: auth.accessToken,
                 )
-                .then<EmployeeStatistics?>((s) => s)
-                .catchError((_) => null),
+                .then<Map<String, dynamic>?>((restaurant) => restaurant.toJson())
+                .catchError((_) => null)
+            : Future<Map<String, dynamic>?>.value(
+                restaurantFromProvider.isNotEmpty ? restaurantFromProvider : null,
+              ),
       ]);
 
       final visits = results[0] as List<Visit>;
+      final restaurantData = results[1] as Map<String, dynamic>?;
 
       if (!mounted) return;
       setState(() {
         _visits = visits;
+        _restaurantData = restaurantData ?? restaurantFromProvider;
         _isLoading = false;
+      });
+
+      if (employeeId == null || employeeId.isEmpty) {
+        if (!mounted) return;
+        setState(() => _isStatsLoading = false);
+        return;
+      }
+
+      _loadEmployeeStatistics(employeeId, auth.accessToken);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _isStatsLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadEmployeeStatistics(String employeeId, String? accessToken) async {
+    try {
+      final stats = await _employeeService
+          .fetchEmployeeStatistics(
+            employeeId,
+            accessToken: accessToken,
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (!mounted) return;
+      setState(() {
+        _employeeStats = stats;
+        _isStatsLoading = false;
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _isLoading = false);
+      setState(() {
+        _employeeStats = null;
+        _isStatsLoading = false;
+      });
     }
   }
 
@@ -173,7 +221,7 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final employee = auth.currentEmployee;
-    final restaurant = auth.restaurant ?? <String, dynamic>{};
+    final restaurant = _restaurantData ?? _mapOrEmpty(auth.restaurant);
     final profile = _mapOrEmpty(restaurant['profile']);
     final location = _mapOrEmpty(profile['location']);
 
@@ -255,7 +303,9 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
                   _KpiCard(
                     icon: Icons.people_alt_outlined,
                     label: 'Customers served',
-                    value: stats?.totalCustomersServed.toString() ?? '0',
+                    value: stats != null
+                        ? stats.totalCustomersServed.toString()
+                        : (_isStatsLoading ? '…' : '0'),
                     color: _green,
                   ),
                   _KpiCard(
@@ -263,19 +313,23 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
                     label: 'Revenue generated',
                     value: stats != null
                         ? '\$${stats.totalRevenueGenerated.toStringAsFixed(2)}'
-                        : '\$0.00',
+                        : (_isStatsLoading ? '…' : '\$0.00'),
                     color: _blue,
                   ),
                   _KpiCard(
                     icon: Icons.verified_rounded,
                     label: 'Reward approvals',
-                    value: stats?.totalRewardApprovalsApproved.toString() ?? '0',
+                    value: stats != null
+                        ? stats.totalRewardApprovalsApproved.toString()
+                        : (_isStatsLoading ? '…' : '0'),
                     color: _orange,
                   ),
                   _KpiCard(
                     icon: Icons.receipt_long_rounded,
                     label: 'Visits handled',
-                    value: stats?.totalVisitsHandled.toString() ?? '0',
+                    value: stats != null
+                        ? stats.totalVisitsHandled.toString()
+                        : (_isStatsLoading ? '…' : '0'),
                     color: _amber,
                   ),
                 ],
@@ -329,6 +383,11 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
 
   Map<String, dynamic> _mapOrEmpty(dynamic value) =>
       value is Map<String, dynamic> ? value : <String, dynamic>{};
+
+  bool _hasRestaurantProfile(Map<String, dynamic> restaurant) {
+    final profile = _mapOrEmpty(restaurant['profile']);
+    return profile.isNotEmpty;
+  }
 
   String _textOrFallback(dynamic value, String fallback) {
     final text = value?.toString().trim() ?? '';

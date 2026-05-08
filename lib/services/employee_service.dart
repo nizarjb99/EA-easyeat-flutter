@@ -1,9 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import '../utils/constants.dart';
-import '../models/restaurant.dart';
-import '../models/visit.dart';
 import '../models/employeeStats.dart';
 
 
@@ -22,7 +21,9 @@ class EmployeeService {
         'Authorization': 'Bearer $accessToken',
     };
 
-    final response = await http.get(uri, headers: headers);
+    final response = await http
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 10));
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
