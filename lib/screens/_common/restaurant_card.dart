@@ -4,7 +4,6 @@ import 'package:ea_easyeat_flutter/models/restaurant.dart'; // Corrected package
 class RestaurantCard extends StatefulWidget {
   final Restaurant restaurant;
   final String distance;
-  final int pointsMultiplier;
   final bool hasSpecialOffer;
   final VoidCallback onClick;
 
@@ -12,7 +11,6 @@ class RestaurantCard extends StatefulWidget {
     super.key,
     required this.restaurant,
     required this.distance,
-    required this.pointsMultiplier,
     this.hasSpecialOffer = false,
     required this.onClick,
   });
@@ -193,36 +191,6 @@ class _RestaurantCardState extends State<RestaurantCard>
                                   ),
                                 ),
                               ],
-                            ),
-                            // Points multiplier badge
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFFF97316),
-                                    Color(0xFFEF4444),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.card_giftcard,
-                                      size: 12, color: Colors.white),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${widget.pointsMultiplier}x PUNTS',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
                             ),
                           ],
                         ),

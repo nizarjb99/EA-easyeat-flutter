@@ -25,16 +25,29 @@ class RestaurantService {
         .toList();
   }
 
+  Future<List<Restaurant>> fetchRestaurantsNearBy({required double lng, required double lat, int maxDistance = 1000, // meters
+  }) async {
+    final uri = Uri.parse('$_baseUrl/near-by?lng=$lng&lat=$lat&maxDistance=$maxDistance');
+
+    final response = await http.get(uri);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to load nearby restaurants (${response.statusCode})');
+    }
+
+    final dynamic body = json.decode(response.body);
+    final List<dynamic> list = _extractList(body);
+
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(Restaurant.fromJson)
+        .toList();
+  }
+
   Future<Restaurant> fetchRestaurantById(String restaurantId, {String? accessToken}) async {
     final uri = Uri.parse('$_baseUrl/$restaurantId');
 
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-      if (accessToken != null && accessToken.isNotEmpty)
-        'Authorization': 'Bearer $accessToken',
-    };
-
-    final response = await http.get(uri, headers: headers);
+    final response = await http.get(uri);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to load restaurant (${response.statusCode})');
