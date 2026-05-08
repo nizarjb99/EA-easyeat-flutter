@@ -190,6 +190,7 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
     final role = employee?.role ?? auth.role ?? 'staff';
     final isOwner = role == 'owner';
     final displayName = _firstName(auth.displayName);
+    final stats = _employeeStats;
 
     return Scaffold(
       backgroundColor: _background,
@@ -254,36 +255,33 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
               _KpiGrid(
                 cards: [
                   _KpiCard(
-                    icon: Icons.stars_rounded,
-                    label: 'Points given today',
-                    value: _pointsGivenToday.toString(),
-                    color: _orange,
-                  ),
-                  _KpiCard(
                     icon: Icons.people_alt_outlined,
-                    label: 'Visits today',
-                    value: _visitsToday.toString(),
+                    label: 'Customers served',
+                    value: stats?.totalCustomersServed.toString() ?? '0',
                     color: _green,
                   ),
                   _KpiCard(
-                    icon: Icons.card_giftcard_outlined,
-                    label: 'Rewards redeemed',
-                    // Replace with RewardRedemption count (status=='redeemed')
-                    value: _redeemedToday.toString(),
+                    icon: Icons.payments_outlined,
+                    label: 'Revenue generated',
+                    value: stats != null
+                        ? '\$${stats.totalRevenueGenerated.toStringAsFixed(2)}'
+                        : '\$0.00',
                     color: _blue,
                   ),
                   _KpiCard(
-                    icon: Icons.star_half_rounded,
-                    label: 'Avg rating today',
-                    // Replace with avg of Review.globalRating (deleted==false)
-                    value: _avgRatingToday != null
-                        ? _avgRatingToday!.toStringAsFixed(1)
-                        : _formatRating(rating),
+                    icon: Icons.verified_rounded,
+                    label: 'Reward approvals',
+                    value: stats?.totalRewardApprovalsApproved.toString() ?? '0',
+                    color: _orange,
+                  ),
+                  _KpiCard(
+                    icon: Icons.receipt_long_rounded,
+                    label: 'Visits handled',
+                    value: stats?.totalVisitsHandled.toString() ?? '0',
                     color: _amber,
                   ),
                 ],
               ),
-
               const SizedBox(height: 28),
 
               // ════════════════════════════════════════════════════════
