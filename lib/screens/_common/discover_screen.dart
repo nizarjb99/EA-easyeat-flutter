@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:ea_easyeat_flutter/models/restaurant.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:ea_easyeat_flutter/screens/_common/restaurant_card.dart';
 import 'package:ea_easyeat_flutter/services/restaurant_service.dart';
 import 'package:ea_easyeat_flutter/screens/_common/restaurant_detail_screen.dart';
+import 'package:ea_easyeat_flutter/screens/_common/map_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
@@ -22,6 +24,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   List<Restaurant> _filteredRestaurants = [];
   Set<String> _availableCities = {};
   Set<String> _availableCategories = {};
+  Position? _userLocation;
 
   @override
   void initState() {
@@ -43,6 +46,18 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         return matchesName && matchesCity && matchesCategory;
       }).toList();
     });
+  }
+
+  String _calculateDistance(Restaurant restaurant){
+    if (_userLocation == null) return "-- km";
+    final coords = restaurant.profile.location.coordinates.coordinates;
+    final distance = Geolocator.distanceBetween(
+      _userLocation!.latitude,
+      _userLocation!.longitude,
+      restaurant.profile.location.coordinates.coordinates[1],
+      restaurant.profile.location.coordinates.coordinates[0],
+    );
+    return "${(distance / 1000).toStringAsFixed(1)} km";
   }
 
   Future<void> _fetchRestaurants() async {
@@ -73,6 +88,20 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       appBar: AppBar(
         title: const Text('Discover'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.map),
+            tooltip: 'Open map',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MapScreen( ),
+                ),
+              );
+            },
+          ),
+        ]
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -162,21 +191,18 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 16.0),
                                   child: RestaurantCard(
-                                    restaurant: restaurant,
-                                    distance: "2.5 km",
-                                    pointsMultiplier: 2,
-                                    hasSpecialOffer: index % 3 == 0,
-                                    onClick: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              RestaurantDetailScreen(
-                                                  restaurant: restaurant),
-                                        ),
-                                      );
-                                    },
-                                  ),
+                                      restaurant: restaurant,
+                                      distance: _calculateDistance(restaurant),
+                                      onClick: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                RestaurantDetailScreen(restaurant: restaurant),
+                                          ),
+                                        );
+                                      },
+                                    ),
                                 );
                               },
                             ),
