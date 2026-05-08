@@ -156,12 +156,10 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
       ]);
 
       final visits = results[0] as List<Visit>;
-      final stats = results[1] as EmployeeStatistics?;
 
       if (!mounted) return;
       setState(() {
         _visits = visits;
-        _employeeStats = stats;
         _isLoading = false;
       });
     } catch (_) {
