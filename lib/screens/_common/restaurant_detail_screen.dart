@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/restaurant.dart';
+import '../../models/reward.dart';
+import '../../services/restaurant_service.dart';
+import '../../widgets/reward_card.dart';
 import '../_customer/qr_code_screen.dart';
 
 
@@ -18,8 +21,10 @@ class RestaurantDetailScreen extends StatefulWidget {
 
 class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   late Restaurant _restaurant;
+  final RestaurantService _restaurantService = RestaurantService();
+  late Future<List<Reward>> _rewardsFuture;
 
-  // Paleta de colors centralitzada — canvia aquí i afecta tot
+  // ...existing code...
   static const _orange = Color(0xFFFF6B35);
   static const _orangeLight = Color(0xFFFFF0EA);
   static const _bg = Color(0xFFF7F7F7);
@@ -30,6 +35,20 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   void initState() {
     super.initState();
     _restaurant = widget.restaurant;
+    _rewardsFuture = _loadRewardsForCurrentRestaurant();
+  }
+
+  @override
+  void didUpdateWidget(covariant RestaurantDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.restaurant.id != widget.restaurant.id) {
+      _restaurant = widget.restaurant;
+      _rewardsFuture = _loadRewardsForCurrentRestaurant();
+    }
+  }
+
+  Future<List<Reward>> _loadRewardsForCurrentRestaurant() {
+    return _restaurantService.getRestaurantRewards(_restaurant.id);
   }
 
   @override
@@ -73,7 +92,8 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
 
                 // Rewards disponibles (ganxo de fidelització)
                 _RewardsSection(
-                  rewardIds: _restaurant.rewards ?? [],
+                  restaurantId: _restaurant.id,
+                  rewardsFuture: _rewardsFuture,
                   accentColor: _orange,
                   orangeLight: _orangeLight,
                   textDark: _textDark,
@@ -534,13 +554,15 @@ class _InfoRow extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _RewardsSection extends StatelessWidget {
-  final List<String> rewardIds;
+  final String restaurantId;
+  final Future<List<Reward>> rewardsFuture;
   final Color accentColor;
   final Color orangeLight;
   final Color textDark;
 
   const _RewardsSection({
-    required this.rewardIds,
+    required this.restaurantId,
+    required this.rewardsFuture,
     required this.accentColor,
     required this.orangeLight,
     required this.textDark,
@@ -548,10 +570,6 @@ class _RewardsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Si no hi ha rewards, mostrem un placeholder discret (no eliminem la secció,
-    // ja que és un ganxo de fidelització important de veure)
-    final hasRewards = rewardIds.isNotEmpty;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
@@ -559,70 +577,64 @@ class _RewardsSection extends StatelessWidget {
         children: [
           _SectionTitle(title: 'Rewards', textDark: textDark),
           const SizedBox(height: 12),
-          hasRewards
-              ? SizedBox(
-            height: 110,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: rewardIds.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (_, index) => _RewardCard(
-                // TODO: substituir per objecte IReward complet quan tinguis el provider
-                label: 'Reward ${index + 1}',
-                accentColor: accentColor,
-                bgColor: orangeLight,
-              ),
-            ),
-          )
-              : _EmptyPlaceholder(
-            icon: Icons.card_giftcard_rounded,
-            message: 'Aviat hi haurà recompenses disponibles',
-            accentColor: accentColor,
-          ),
-        ],
-      ),
-    );
-  }
-}
+          FutureBuilder<List<Reward>>(
+            future: rewardsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return SizedBox(
+                  height: 110,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 3,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (_, __) => RewardCardSkeleton(
+                      accentColor: accentColor,
+                      bgColor: orangeLight,
+                    ),
+                  ),
+                );
+              }
 
-class _RewardCard extends StatelessWidget {
-  final String label;
-  final Color accentColor;
-  final Color bgColor;
+              if (snapshot.hasError) {
+                return _EmptyPlaceholder(
+                  icon: Icons.error_outline_rounded,
+                  message: 'Error loading rewards',
+                  accentColor: accentColor,
+                );
+              }
 
-  const _RewardCard({
-    required this.label,
-    required this.accentColor,
-    required this.bgColor,
-  });
+              final rewards = snapshot.data ?? [];
+              if (rewards.isEmpty) {
+                return _EmptyPlaceholder(
+                  icon: Icons.card_giftcard_rounded,
+                  message: 'Aviat hi haurà recompenses disponibles',
+                  accentColor: accentColor,
+                );
+              }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 160,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accentColor.withOpacity(0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.card_giftcard_rounded, color: accentColor, size: 28),
-          const Spacer(),
-          Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color: accentColor,
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            'Toca per canviar',
-            style: TextStyle(color: accentColor.withOpacity(0.6), fontSize: 11),
+              final displayedRewards = rewards.take(5).toList();
+              return SizedBox(
+                height: 110,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: displayedRewards.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (_, index) => RewardCard(
+                    reward: displayedRewards[index],
+                    accentColor: accentColor,
+                    bgColor: orangeLight,
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Redeem: ${displayedRewards[index].name}'),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),

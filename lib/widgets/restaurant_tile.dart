@@ -25,6 +25,7 @@ class RestaurantTile extends StatelessWidget {
         subtitle: Text('${restaurant.employees?.length ?? 0} empleados registrados'), // Handle null employees
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
+
           Navigator.push(
             context,
             MaterialPageRoute(

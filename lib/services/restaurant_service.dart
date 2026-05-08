@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../utils/constants.dart';
 import '../models/restaurant.dart';
+import '../models/reward.dart';
 import '../models/visit.dart';
 
 class RestaurantService {
@@ -89,6 +90,42 @@ class RestaurantService {
         .whereType<Map<String, dynamic>>()
         .map(Visit.fromJson)
         .toList();
+  }
+
+  Future<List<Reward>> getRestaurantRewards(
+    String restaurantId, {
+    String? accessToken,
+    int page = 1,
+    int limit = 10,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/$restaurantId/rewards?page=$page&limit=$limit');
+
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      if (accessToken != null && accessToken.isNotEmpty)
+        'Authorization': 'Bearer $accessToken',
+    };
+
+    try {
+      final response = await http.get(uri, headers: headers);
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('Failed to load rewards (${response.statusCode})');
+      }
+
+      final dynamic body = json.decode(response.body);
+      final List<dynamic> list = _extractList(body);
+
+      final rewards = list
+          .whereType<Map<String, dynamic>>()
+          .map(Reward.fromJson)
+          .toList();
+
+      // Filter: only return active rewards that haven't expired
+      return rewards.where((reward) => reward.isValid).toList();
+    } catch (e) {
+      throw Exception('Error loading rewards: $e');
+    }
   }
 
   List<dynamic> _extractList(dynamic body) {
