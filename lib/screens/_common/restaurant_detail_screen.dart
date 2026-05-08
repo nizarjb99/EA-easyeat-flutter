@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../models/restaurant.dart';
 import '../../models/reward.dart';
+import '../../models/dish.dart';
 import '../../services/restaurant_service.dart';
 import '../../widgets/reward_card.dart';
+import '../../widgets/dish_card.dart';
+import '../../widgets/dish_skeleton_card.dart';
 import '../_customer/qr_code_screen.dart';
 
 
@@ -22,7 +25,6 @@ class RestaurantDetailScreen extends StatefulWidget {
 class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   late Restaurant _restaurant;
   final RestaurantService _restaurantService = RestaurantService();
-  late Future<List<Reward>> _rewardsFuture;
 
   // ...existing code...
   static const _orange = Color(0xFFFF6B35);
@@ -35,7 +37,6 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   void initState() {
     super.initState();
     _restaurant = widget.restaurant;
-    _rewardsFuture = _loadRewardsForCurrentRestaurant();
   }
 
   @override
@@ -43,12 +44,9 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.restaurant.id != widget.restaurant.id) {
       _restaurant = widget.restaurant;
-      _rewardsFuture = _loadRewardsForCurrentRestaurant();
+      // Force rebuild to reload rewards for the new restaurant
+      setState(() {});
     }
-  }
-
-  Future<List<Reward>> _loadRewardsForCurrentRestaurant() {
-    return _restaurantService.getRestaurantRewards(_restaurant.id);
   }
 
   @override
@@ -93,7 +91,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                 // Rewards disponibles (ganxo de fidelització)
                 _RewardsSection(
                   restaurantId: _restaurant.id,
-                  rewardsFuture: _rewardsFuture,
+                  rewardsFuture: _restaurantService.getRestaurantRewards(_restaurant.id),
                   accentColor: _orange,
                   orangeLight: _orangeLight,
                   textDark: _textDark,
@@ -103,7 +101,8 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
 
                 // Preview de plats destacats
                 _DishesPreviewSection(
-                  dishIds: _restaurant.dishes ?? [],
+                  restaurantId: _restaurant.id,
+                  restaurantService: _restaurantService,
                   accentColor: _orange,
                   textDark: _textDark,
                   textMuted: _textMuted,
@@ -624,10 +623,14 @@ class _RewardsSection extends StatelessWidget {
                     accentColor: accentColor,
                     bgColor: orangeLight,
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Redeem: ${displayedRewards[index].name}'),
-                          duration: const Duration(seconds: 2),
+                      final selectedReward = displayedRewards[index];
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => QRCodeScreen(
+                            restaurantId: restaurantId,
+                            rewardId: selectedReward.id,
+                          ),
                         ),
                       );
                     },
@@ -647,14 +650,16 @@ class _RewardsSection extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _DishesPreviewSection extends StatelessWidget {
-  final List<String> dishIds;
+  final String restaurantId;
+  final RestaurantService restaurantService;
   final Color accentColor;
   final Color textDark;
   final Color textMuted;
   final VoidCallback onSeeAllPressed;
 
   const _DishesPreviewSection({
-    required this.dishIds,
+    required this.restaurantId,
+    required this.restaurantService,
     required this.accentColor,
     required this.textDark,
     required this.textMuted,
@@ -663,8 +668,6 @@ class _DishesPreviewSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasDishes = dishIds.isNotEmpty;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
@@ -674,96 +677,65 @@ class _DishesPreviewSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _SectionTitle(title: 'Menu', textDark: textDark),
-              if (hasDishes)
-                TextButton(
-                  onPressed: onSeeAllPressed,
-                  style: TextButton.styleFrom(foregroundColor: accentColor),
-                  child: const Text('Veure tot'),
-                ),
             ],
           ),
           const SizedBox(height: 12),
-          hasDishes
-              ? SizedBox(
-            height: 130,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: dishIds.length.clamp(0, 6),
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (_, index) => _DishCard(
-                // TODO: substituir per objecte IDish complet
-                name: 'Plat ${index + 1}',
-                accentColor: accentColor,
-                textDark: textDark,
-                textMuted: textMuted,
-              ),
-            ),
-          )
-              : _EmptyPlaceholder(
-            icon: Icons.restaurant_menu_rounded,
-            message: 'La carta encara no està disponible',
-            accentColor: accentColor,
-          ),
-        ],
-      ),
-    );
-  }
-}
+          FutureBuilder<List<Dish>>(
+            future: restaurantService.fetchDishesByRestaurant(restaurantId, limit: 6),
+            builder: (context, snapshot) {
+              // Loading state - show skeleton cards
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return SizedBox(
+                  height: 160,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 4,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (_, __) => DishSkeletonCard(
+                      accentColor: accentColor,
+                      bgColor: Colors.orange.shade50,
+                    ),
+                  ),
+                );
+              }
 
-class _DishCard extends StatelessWidget {
-  final String name;
-  final Color accentColor;
-  final Color textDark;
-  final Color textMuted;
+              // Error state
+              if (snapshot.hasError) {
+                return _EmptyPlaceholder(
+                  icon: Icons.restaurant_menu_rounded,
+                  message: 'La carta no es pot carregar ara',
+                  accentColor: accentColor,
+                );
+              }
 
-  const _DishCard({
-    required this.name,
-    required this.accentColor,
-    required this.textDark,
-    required this.textMuted,
-  });
+              // Empty state
+              final dishes = snapshot.data ?? [];
+              if (dishes.isEmpty) {
+                return _EmptyPlaceholder(
+                  icon: Icons.restaurant_menu_rounded,
+                  message: 'La carta encara no està disponible',
+                  accentColor: accentColor,
+                );
+              }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 120,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Placeholder imatge plat
-          Container(
-            height: 80,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            ),
-            child: Center(
-              child: Icon(Icons.fastfood_rounded, color: Colors.grey.shade300, size: 32),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
-            child: Text(
-              name,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-                color: textDark,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
+              // Display dishes
+              return SizedBox(
+                height: 160,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: dishes.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (_, index) => DishCard(
+                    dish: dishes[index],
+                    accentColor: accentColor,
+                    bgColor: Colors.orange.shade50,
+                    onTap: () {
+                      // TODO: Navigate to dish detail or add to cart
+                    },
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -890,7 +862,7 @@ class _ReviewPlaceholderCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -958,7 +930,7 @@ class _CustomerQRCodeSection extends StatelessWidget {
             decoration: BoxDecoration(
               color: orangeLight,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: accentColor.withOpacity(0.2)),
+              border: Border.all(color: accentColor.withValues(alpha: 0.2)),
             ),
             child: Column(
               children: [
@@ -1067,7 +1039,7 @@ class _BadgeChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accentColor.withOpacity(0.3)),
+        border: Border.all(color: accentColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
