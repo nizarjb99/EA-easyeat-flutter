@@ -1,27 +1,73 @@
-import 'package:ea_easyeat_flutter/screens/_employee/home_employee_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'qr_code_screen.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../services/customer_service.dart';
+import '../../models/customerStats.dart';
 
-class HomeCustomerScreen extends StatelessWidget {
+// ─── Color Palette ──────────────────────────────────────────────────────────
+const Color _orange = Color(0xFFFF7A1A);
+const Color _green = Color(0xFF16A34A);
+const Color _dark = Color(0xFF0F172A);
+const Color _grey = Color(0xFF64748B);
+
+class HomeCustomerScreen extends StatefulWidget {
   const HomeCustomerScreen({super.key});
 
-  static const Color orange = Color(0xFFFF7A1A);
-  static const Color green = Color(0xFF16A34A);
-  static const Color dark = Color(0xFF0F172A);
-  static const Color grey = Color(0xFF64748B);
+  @override
+  State<HomeCustomerScreen> createState() => _HomeCustomerScreenState();
+}
+
+class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
+  final CustomerService _customerService = CustomerService();
+  CustomerStatistics? _customerStats;
+  bool _isStatsLoading = true;
+
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCustomerStats();
+  }
+
+  Future<void> _loadCustomerStats() async {
+    final auth = context.read<AuthProvider>();
+    final customerId = auth.currentCustomer?.id;
+    final token = auth.accessToken;
+
+    if (customerId == null || customerId.isEmpty || token == null || token.isEmpty) {
+      if (!mounted) return;
+      setState(() => _isStatsLoading = false);
+      return;
+    }
+
+    try {
+      final stats = await _customerService
+          .fetchCustomerStatistics(
+            customerId,
+            accessToken: token,
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (!mounted) return;
+      setState(() {
+        _customerStats = stats;
+        _isStatsLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _customerStats = null;
+        _isStatsLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final customer = auth.currentCustomer;
-
-    final totalPoints = customer?.pointsWallet.length ?? 0;
-    final visits = customer?.visitHistory.length ?? 0;
-    final badges = customer?.badges.length ?? 0;
-    final favorites = customer?.favoriteRestaurants.length ?? 0;
+    final stats = _customerStats;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBF7),
@@ -34,7 +80,7 @@ class HomeCustomerScreen extends StatelessWidget {
             SizedBox(width: 8),
             Text(
               'EasyEat',
-              style: TextStyle(color: dark, fontWeight: FontWeight.w900),
+              style: TextStyle(color: _dark, fontWeight: FontWeight.w900),
             ),
           ],
         ),
@@ -44,7 +90,7 @@ class HomeCustomerScreen extends StatelessWidget {
             child: Center(
               child: Text(
                 auth.displayName.split(' ').first,
-                style: const TextStyle(color: dark, fontWeight: FontWeight.w700),
+                style: const TextStyle(color: _dark, fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -54,7 +100,7 @@ class HomeCustomerScreen extends StatelessWidget {
               auth.logout();
               Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
             },
-            icon: const Icon(Icons.logout, color: dark),
+            icon: const Icon(Icons.logout, color: _dark),
           ),
         ],
       ),
@@ -69,10 +115,38 @@ class HomeCustomerScreen extends StatelessWidget {
               builder: (context, constraints) {
                 final isWide = constraints.maxWidth >= 760;
                 final cards = [
-                  _StatCard(icon: Icons.monetization_on_outlined, value: '$totalPoints', label: 'Wallets de puntos', color: orange),
-                  _StatCard(icon: Icons.local_fire_department_outlined, value: '$visits', label: 'Visitas', color: green),
-                  _StatCard(icon: Icons.emoji_events_outlined, value: '$badges', label: 'Badges', color: orange),
-                  _StatCard(icon: Icons.favorite_outline, value: '$favorites', label: 'Favoritos', color: green),
+                  _StatCard(
+                    icon: Icons.account_balance_wallet_outlined,
+                    value: stats != null
+                        ? stats.currentPointsBalance.toString()
+                        : (_isStatsLoading ? '…' : '0'),
+                    label: 'Puntos disponibles',
+                    color: _orange,
+                  ),
+                  _StatCard(
+                    icon: Icons.local_fire_department_outlined,
+                    value: stats != null
+                        ? stats.totalVisits.toString()
+                        : (_isStatsLoading ? '…' : '0'),
+                    label: 'Visitas',
+                    color: _green,
+                  ),
+                  _StatCard(
+                    icon: Icons.star_outline,
+                    value: stats != null
+                        ? stats.averageReviewRating.toStringAsFixed(1)
+                        : (_isStatsLoading ? '…' : '-'),
+                    label: 'Calificación promedio',
+                    color: _orange,
+                  ),
+                  _StatCard(
+                    icon: Icons.favorite_outline,
+                    value: stats != null
+                        ? stats.favoriteRestaurants.toString()
+                        : (_isStatsLoading ? '…' : '0'),
+                    label: 'Restaurantes favoritos',
+                    color: _green,
+                  ),
                 ];
 
                 if (isWide) {
@@ -115,7 +189,7 @@ class HomeCustomerScreen extends StatelessWidget {
             const SizedBox(height: 32),
             const Text(
               'Restaurantes recomendados',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: dark),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: _dark),
             ),
             const SizedBox(height: 16),
             const _EmptyCard(
@@ -141,7 +215,7 @@ class _WelcomeCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [HomeCustomerScreen.orange, Color(0xFFFFB347)]),
+        gradient: const LinearGradient(colors: [_orange, Color(0xFFFFB347)]),
         borderRadius: BorderRadius.circular(28),
       ),
       child: Column(
@@ -174,15 +248,15 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 18, offset: const Offset(0, 8))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 18, offset: const Offset(0, 8))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Icon(icon, color: color, size: 28),
-          Text(value, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: HomeCustomerScreen.dark)),
-          Text(label, style: const TextStyle(color: HomeCustomerScreen.grey, fontWeight: FontWeight.w600)),
+          Text(value, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: _dark)),
+          Text(label, style: const TextStyle(color: _grey, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -198,7 +272,7 @@ class _QuickActions extends StatelessWidget {
       icon: Icons.qr_code_2_rounded,
       label: 'Show my QR',
       sublabel: 'Use it to earn or redeem points at the restaurant',
-      color: HomeCustomerScreen.orange,
+      color: _orange,
       onTap: () {
         Navigator.push(
           context,
@@ -237,13 +311,13 @@ class _ActionButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
+           boxShadow: [
+             BoxShadow(
+               color: Colors.black.withValues(alpha: 0.04),
+               blurRadius: 14,
+               offset: const Offset(0, 6),
+             ),
+           ],
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Row(
@@ -252,7 +326,7 @@ class _ActionButton extends StatelessWidget {
               height: 44,
               width: 44,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
+                color: color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(icon, color: color, size: 24),
@@ -262,23 +336,23 @@ class _ActionButton extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      color: HomeCustomerScreen.dark,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    sublabel,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: HomeCustomerScreen.grey,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                   Text(
+                     label,
+                     style: const TextStyle(
+                       fontSize: 15,
+                       fontWeight: FontWeight.w900,
+                       color: _dark,
+                     ),
+                   ),
+                   const SizedBox(height: 2),
+                   Text(
+                     sublabel,
+                     style: const TextStyle(
+                       fontSize: 12,
+                       color: _grey,
+                       fontWeight: FontWeight.w500,
+                     ),
+                   ),
                 ],
               ),
             ),
@@ -306,13 +380,13 @@ class _EmptyCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, color: HomeCustomerScreen.grey, size: 48),
+          Icon(icon, color: _grey, size: 48),
           const SizedBox(height: 16),
           Text(
             title,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: HomeCustomerScreen.dark,
+                  color: _dark,
                   fontWeight: FontWeight.w900,
                 ),
           ),
@@ -321,7 +395,7 @@ class _EmptyCard extends StatelessWidget {
             subtitle,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: HomeCustomerScreen.grey,
+                  color: _grey,
                 ),
           ),
         ],
