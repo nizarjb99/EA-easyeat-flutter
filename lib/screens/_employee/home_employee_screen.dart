@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/employee.dart';
 import '../../models/visit.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/restaurant_service.dart';
+import '../../services/employee_service.dart';
 import '../../utils/styles.dart';
 import '../_employee/customer_qr_scanner_screen.dart';
+import '../../models/employeeStats.dart';
 
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
@@ -48,11 +49,16 @@ class HomeEmployeeScreen extends StatefulWidget {
 }
 
 class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
-  final RestaurantService _service = RestaurantService();
+  final RestaurantService _restaurantService = RestaurantService();
+  final EmployeeService _employeeService = EmployeeService();
 
   // ── raw data from backend ──────────────────────────────────────────────────
   List<Visit> _visits = [];
   bool _isLoading = true;
+
+  // This value is loaded and kept for future use in the UI.
+  // ignore: unused_field
+  EmployeeStatistics? _employeeStats;
 
   // ── today's window ─────────────────────────────────────────────────────────
   DateTime get _todayStart {
@@ -125,6 +131,7 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
       final restaurant = auth.restaurant ?? <String, dynamic>{};
       final profile = _mapOrEmpty(restaurant['profile']);
       final restaurantId = _restaurantId(restaurant, profile);
+      final employeeId = auth.currentEmployee?.id ?? auth.id;
 
       if (restaurantId == null) {
         if (!mounted) return;
@@ -132,14 +139,29 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
         return;
       }
 
-      final visits = await _service.fetchVisitsByRestaurant(
-        restaurantId,
-        accessToken: auth.accessToken,
-      );
+      final results = await Future.wait<dynamic>([
+        _restaurantService.fetchVisitsByRestaurant(
+          restaurantId,
+          accessToken: auth.accessToken,
+        ).catchError((_) => <Visit>[]),
+        employeeId == null
+            ? Future<EmployeeStatistics?>.value(null)
+            : _employeeService
+                .fetchEmployeeStatistics(
+                  employeeId,
+                  accessToken: auth.accessToken,
+                )
+                .then<EmployeeStatistics?>((s) => s)
+                .catchError((_) => null),
+      ]);
+
+      final visits = results[0] as List<Visit>;
+      final stats = results[1] as EmployeeStatistics?;
 
       if (!mounted) return;
       setState(() {
         _visits = visits;
+        _employeeStats = stats;
         _isLoading = false;
       });
     } catch (_) {
