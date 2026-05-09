@@ -31,7 +31,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Use displayName, email, and restaurant from AuthProvider directly
     final String displayName = authProvider.displayName;
     final String? email = authProvider.email;
-    final String? restaurantName = authProvider.restaurant?['name'];
+    final restaurantData = authProvider.restaurant;
+    final String? restaurantName = restaurantData?['profile']?['name'] ?? restaurantData?['name'];
 
     // Check if there's any logged-in user (customer or employee)
     if (!authProvider.isLoggedIn) {

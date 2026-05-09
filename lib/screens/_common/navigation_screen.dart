@@ -42,6 +42,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final bool isEmployee = authProvider.isEmployee;
+    final bool isStaff = authProvider.isStaff;
+
+    if (isStaff) {
+      return const ProfileScreen();
+    }
 
     final List<BottomNavigationBarItem> employeeNavItems = [
       const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),

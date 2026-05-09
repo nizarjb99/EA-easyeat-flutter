@@ -467,15 +467,19 @@ class _KpiGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
-      final crossCount = constraints.maxWidth >= 600 ? 4 : 2;
-      return GridView.count(
-        crossAxisCount: crossCount,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.25,
-        children: cards.map((c) => _KpiTile(card: c)).toList(),
+      int crossCount = 2;
+      if (constraints.maxWidth >= 800) crossCount = 4;
+      else if (constraints.maxWidth < 300) crossCount = 1;
+      
+      final width = (constraints.maxWidth - (crossCount - 1) * 12) / crossCount;
+
+      return Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: cards.map((c) => SizedBox(
+          width: width,
+          child: _KpiTile(card: c),
+        )).toList(),
       );
     });
   }
@@ -502,7 +506,7 @@ class _KpiTile extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
@@ -512,15 +516,19 @@ class _KpiTile extends StatelessWidget {
             ),
             child: Icon(card.icon, color: card.color, size: 20),
           ),
+          const SizedBox(height: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                card.value,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  color: _dark,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  card.value,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: _dark,
+                  ),
                 ),
               ),
               Text(

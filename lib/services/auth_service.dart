@@ -55,13 +55,13 @@ class AuthService {
   }
 
 
-  Future<Map<String, dynamic>> fetchUserById(
-    String userId,
+  Future<Map<String, dynamic>> fetchCustomerById(
+    String customerId,
     String accessToken,
   ) async {
     try {
       final response = await http.get(
-        Uri.parse('${AppConstants.baseUrl}/users/$userId'),
+        Uri.parse('${AppConstants.baseUrl}/customers/$customerId'),
         headers: <String, String>{
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
@@ -72,7 +72,31 @@ class AuthService {
         return json.decode(response.body);
       } else {
         final body = json.decode(response.body);
-        throw Exception(body['message'] ?? 'Error getting user');
+        throw Exception(body['message'] ?? 'Error getting customer');
+      }
+    } catch (e) {
+      throw Exception('Error connecting to the server: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchEmployeeById(
+    String employeeId,
+    String accessToken,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${AppConstants.baseUrl}/employees/$employeeId'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final body = json.decode(response.body);
+        throw Exception(body['message'] ?? 'Error getting employee');
       }
     } catch (e) {
       throw Exception('Error connecting to the server: $e');
