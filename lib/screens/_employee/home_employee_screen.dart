@@ -637,7 +637,7 @@ class _QuickActions extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const CustomerQrScannerScreen(),
+                  builder: (_) => const CustomerQrScannerScreen(type: 'reward'),
                 ),
               );
             },
@@ -652,7 +652,7 @@ class _QuickActions extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const CustomerQrScannerScreen(),
+                  builder: (_) => const CustomerQrScannerScreen(type: 'visit'),
                 ),
               );
             },
