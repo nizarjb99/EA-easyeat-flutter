@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
 
 import '../../providers/auth_provider.dart';
 import '../../services/customer_service.dart';
@@ -8,10 +9,13 @@ import '../../utils/styles.dart';
 
 // ═════════════════════════════════════════════════════════════════════════════
 class CustomerQrScannerScreen extends StatefulWidget {
-  const CustomerQrScannerScreen({super.key});
+  final String type;
+
+  const CustomerQrScannerScreen({super.key, required this.type});
 
   @override
-  State<CustomerQrScannerScreen> createState() => _CustomerQrScannerScreenState();
+  State<CustomerQrScannerScreen> createState() =>
+      _CustomerQrScannerScreenState();
 }
 
 class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
@@ -19,7 +23,7 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
   final CustomerService _customerService = CustomerService();
 
   bool _isProcessing = false;
-  String? _scannedCustomerId;
+  String? _data;
 
   @override
   void dispose() {
@@ -28,35 +32,48 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
   }
 
   Future<void> _handleQrDetection(BarcodeCapture barcodes) async {
-    if (_isProcessing || _scannedCustomerId != null) return;
+    if (_isProcessing || _data != null) return;
 
     // Avoid using firstOrNull if you want simpler/safer behavior
-    final barcode = barcodes.barcodes.isNotEmpty ? barcodes.barcodes.first : null;
+    final barcode = barcodes.barcodes.isNotEmpty
+        ? barcodes.barcodes.first
+        : null;
     final rawValue = barcode?.rawValue?.trim();
 
     if (rawValue == null || rawValue.isEmpty) return;
 
     setState(() {
       _isProcessing = true;
-      _scannedCustomerId = rawValue;
+      _data = rawValue;
     });
 
-      if (!mounted) return;
+    if (!mounted) return;
 
+    if (widget.type == 'visit') {
       Navigator.pushReplacementNamed(
         context,
         '/add-visit',
+        arguments: {'customerId': rawValue},
+      );
+    } else if (widget.type == 'reward') {
+      final Map<String, dynamic> json = jsonDecode(rawValue);
+      Navigator.pushReplacementNamed(
+        context,
+        '/exchange-reward',
         arguments: {
-          'customerId': rawValue,
+          'customerId': json['customer_id'],
+          'rewardId': json['reward_id'],
+          'restaurantId': json['restaurant_id'],
         },
       );
+    }
   }
 
   void _reset() {
     if (!mounted) return;
     setState(() {
       _isProcessing = false;
-      _scannedCustomerId = null;
+      _data = null;
     });
   }
 
@@ -84,10 +101,7 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
         elevation: 0,
         title: const Text(
           'Scan Customer QR Code',
-          style: TextStyle(
-            color: AppColors.text,
-            fontWeight: FontWeight.w900,
-          ),
+          style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900),
         ),
         centerTitle: true,
         leading: IconButton(
@@ -198,7 +212,12 @@ class _ScannerOverlay extends StatelessWidget {
         Positioned.fill(
           child: CustomPaint(
             painter: _ScannerFramePainter(
-              frameRect: Rect.fromLTWH(frameLeft, frameTop, frameSize, frameSize),
+              frameRect: Rect.fromLTWH(
+                frameLeft,
+                frameTop,
+                frameSize,
+                frameSize,
+              ),
             ),
           ),
         ),
@@ -215,14 +234,20 @@ class _ScannerOverlay extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.customer.withOpacity(0.3)),
+                  border: Border.all(
+                    color: AppColors.customer.withOpacity(0.3),
+                  ),
                 ),
                 child: Column(
                   children: [
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.info_outline, color: AppColors.customer, size: 16),
+                        Icon(
+                          Icons.info_outline,
+                          color: AppColors.customer,
+                          size: 16,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           'Position the QR code in the frame',

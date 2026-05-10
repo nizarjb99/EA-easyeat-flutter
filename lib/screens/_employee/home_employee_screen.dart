@@ -11,7 +11,6 @@ import '../_employee/customer_qr_scanner_screen.dart';
 import '../../models/employeeStats.dart';
 import '../../widgets/language_dropdown_widget.dart';
 
-
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const Color _orange = Color(0xFFFF7A1A);
 const Color _green = Color(0xFF16A34A);
@@ -30,7 +29,11 @@ class _FeedEntry {
   final _FeedType type;
   final String text;
   final DateTime time;
-  const _FeedEntry({required this.type, required this.text, required this.time});
+  const _FeedEntry({
+    required this.type,
+    required this.text,
+    required this.time,
+  });
 }
 
 // ─── Fake alert entry ─────────────────────────────────────────────────────────
@@ -99,14 +102,18 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
     final entries = <_FeedEntry>[];
     for (final v in _visits.take(5)) {
       // Visit model: customerName, pointsEarned, date
-      entries.add(_FeedEntry(
-        type: _FeedType.visit,
-        text: 'home.earned_points'.tr(args: [
-          _textOrFallback(v.customerName, 'dashboard.roles.customer'.tr()),
-          v.pointsEarned.toInt().toString()
-        ]),
-        time: v.date,
-      ));
+      entries.add(
+        _FeedEntry(
+          type: _FeedType.visit,
+          text: 'home.earned_points'.tr(
+            args: [
+              _textOrFallback(v.customerName, 'dashboard.roles.customer'.tr()),
+              v.pointsEarned.toInt().toString(),
+            ],
+          ),
+          time: v.date,
+        ),
+      );
     }
     return entries;
   }
@@ -115,10 +122,12 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
   List<_AlertEntry> get _alerts {
     final list = <_AlertEntry>[];
     if (_visitsToday == 0 && !_isLoading) {
-      list.add(_AlertEntry(
-        severity: _AlertSeverity.info,
-        message: 'home.fewer_visits'.tr(),
-      ));
+      list.add(
+        _AlertEntry(
+          severity: _AlertSeverity.info,
+          message: 'home.fewer_visits'.tr(),
+        ),
+      );
     }
     // Extend: pull Review.ratings.staffService average; if < 6 add warning
     // Extend: pull Statistics.loyalCustomers trend
@@ -136,39 +145,56 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
     try {
       final auth = context.read<AuthProvider>();
       final restaurantFromProvider = _mapOrEmpty(auth.restaurant);
-      final profileFromProvider = _mapOrEmpty(restaurantFromProvider['profile']);
-      final employeeRestaurantId = auth.currentEmployee?.restaurantId.toString().trim();
-      final restaurantId = _restaurantId(restaurantFromProvider, profileFromProvider) ??
-          ((employeeRestaurantId != null && employeeRestaurantId.isNotEmpty) ? employeeRestaurantId : null);
+      final profileFromProvider = _mapOrEmpty(
+        restaurantFromProvider['profile'],
+      );
+      final employeeRestaurantId = auth.currentEmployee?.restaurantId
+          .toString()
+          .trim();
+      final restaurantId =
+          _restaurantId(restaurantFromProvider, profileFromProvider) ??
+          ((employeeRestaurantId != null && employeeRestaurantId.isNotEmpty)
+              ? employeeRestaurantId
+              : null);
       final employeeId = auth.currentEmployee?.id ?? auth.id;
 
       if (restaurantId == null) {
         if (!mounted) return;
         setState(() {
-          _restaurantData = restaurantFromProvider.isNotEmpty ? restaurantFromProvider : null;
+          _restaurantData = restaurantFromProvider.isNotEmpty
+              ? restaurantFromProvider
+              : null;
           _isLoading = false;
           _isStatsLoading = false;
         });
         return;
       }
 
-      final needsRestaurantFetch = !_hasRestaurantProfile(restaurantFromProvider);
+      final needsRestaurantFetch = !_hasRestaurantProfile(
+        restaurantFromProvider,
+      );
 
       final results = await Future.wait<dynamic>([
-        _restaurantService.fetchVisitsByRestaurant(
-          restaurantId,
-          accessToken: auth.accessToken,
-        ).catchError((_) => <Visit>[]),
+        _restaurantService
+            .fetchVisitsByRestaurant(
+              restaurantId,
+              accessToken: auth.accessToken,
+            )
+            .catchError((_) => <Visit>[]),
         needsRestaurantFetch
             ? _restaurantService
-                .fetchRestaurantById(
-                  restaurantId,
-                  accessToken: auth.accessToken,
-                )
-                .then<Map<String, dynamic>?>((restaurant) => restaurant.toJson())
-                .catchError((_) => null)
+                  .fetchRestaurantById(
+                    restaurantId,
+                    accessToken: auth.accessToken,
+                  )
+                  .then<Map<String, dynamic>?>(
+                    (restaurant) => restaurant.toJson(),
+                  )
+                  .catchError((_) => null)
             : Future<Map<String, dynamic>?>.value(
-                restaurantFromProvider.isNotEmpty ? restaurantFromProvider : null,
+                restaurantFromProvider.isNotEmpty
+                    ? restaurantFromProvider
+                    : null,
               ),
       ]);
 
@@ -198,13 +224,13 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
     }
   }
 
-  Future<void> _loadEmployeeStatistics(String employeeId, String? accessToken) async {
+  Future<void> _loadEmployeeStatistics(
+    String employeeId,
+    String? accessToken,
+  ) async {
     try {
       final stats = await _employeeService
-          .fetchEmployeeStatistics(
-            employeeId,
-            accessToken: accessToken,
-          )
+          .fetchEmployeeStatistics(employeeId, accessToken: accessToken)
           .timeout(const Duration(seconds: 10));
 
       if (!mounted) return;
@@ -270,7 +296,10 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
             Center(
               child: Text(
                 displayName,
-                style: const TextStyle(color: _dark, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  color: _dark,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           IconButton(
@@ -284,102 +313,116 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
           : RefreshIndicator(
-        onRefresh: _loadDashboardData,
-        color: AppColors.primary,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Restaurant Hero ──────────────────────────────────────
-              _RestaurantHero(
-                restaurantName: restaurantName,
-                city: restCity,
-                address: restAddress,
-                rating: rating,
+              onRefresh: _loadDashboardData,
+              color: AppColors.primary,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Restaurant Hero ──────────────────────────────────────
+                    _RestaurantHero(
+                      restaurantName: restaurantName,
+                      city: restCity,
+                      address: restAddress,
+                      rating: rating,
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // ════════════════════════════════════════════════════════
+                    // 1. KPI CARDS
+                    // ════════════════════════════════════════════════════════
+                    _SectionTitle(
+                      title: 'dashboard.overview'.tr(),
+                      icon: Icons.bar_chart_rounded,
+                    ),
+                    const SizedBox(height: 14),
+                    _KpiGrid(
+                      cards: [
+                        _KpiCard(
+                          icon: Icons.people_alt_outlined,
+                          label: 'dashboard.customers_served'.tr(),
+                          value: stats != null
+                              ? stats.totalCustomersServed.toString()
+                              : (_isStatsLoading ? '…' : '0'),
+                          color: _green,
+                        ),
+                        _KpiCard(
+                          icon: Icons.payments_outlined,
+                          label: 'dashboard.revenue_generated'.tr(),
+                          value: stats != null
+                              ? '\$${stats.totalRevenueGenerated.toStringAsFixed(2)}'
+                              : (_isStatsLoading ? '…' : '\$0.00'),
+                          color: _blue,
+                        ),
+                        _KpiCard(
+                          icon: Icons.verified_rounded,
+                          label: 'dashboard.reward_approvals'.tr(),
+                          value: stats != null
+                              ? stats.totalRewardApprovalsApproved.toString()
+                              : (_isStatsLoading ? '…' : '0'),
+                          color: _orange,
+                        ),
+                        _KpiCard(
+                          icon: Icons.receipt_long_rounded,
+                          label: 'dashboard.visits_handled'.tr(),
+                          value: stats != null
+                              ? stats.totalVisitsHandled.toString()
+                              : (_isStatsLoading ? '…' : '0'),
+                          color: _amber,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 28),
+
+                    // ════════════════════════════════════════════════════════
+                    // 2. QUICK ACTIONS
+                    // ════════════════════════════════════════════════════════
+                    _SectionTitle(
+                      title: 'home.quick_actions'.tr(),
+                      icon: Icons.bolt_rounded,
+                    ),
+                    const SizedBox(height: 14),
+                    _QuickActions(isOwner: isOwner),
+
+                    const SizedBox(height: 28),
+
+                    // ════════════════════════════════════════════════════════
+                    // 3. LIVE ACTIVITY FEED
+                    // ════════════════════════════════════════════════════════
+                    _SectionTitle(
+                      title: 'home.activity_feed'.tr(),
+                      icon: Icons.stream,
+                    ),
+                    const SizedBox(height: 14),
+                    _ActivityFeed(entries: _feedEntries, visits: _visits),
+
+                    const SizedBox(height: 28),
+
+                    // ════════════════════════════════════════════════════════
+                    // 4. ALERTS & INSIGHTS
+                    // ════════════════════════════════════════════════════════
+                    if (_alerts.isNotEmpty) ...[
+                      _SectionTitle(
+                        title: 'home.alerts'.tr(),
+                        icon: Icons.notifications_active_outlined,
+                      ),
+                      const SizedBox(height: 14),
+                      _AlertsPanel(alerts: _alerts),
+                      const SizedBox(height: 28),
+                    ],
+
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
-
-              const SizedBox(height: 28),
-
-              // ════════════════════════════════════════════════════════
-              // 1. KPI CARDS
-              // ════════════════════════════════════════════════════════
-              _SectionTitle(title: 'dashboard.overview'.tr(), icon: Icons.bar_chart_rounded),
-              const SizedBox(height: 14),
-              _KpiGrid(
-                cards: [
-                  _KpiCard(
-                    icon: Icons.people_alt_outlined,
-                    label: 'dashboard.customers_served'.tr(),
-                    value: stats != null
-                        ? stats.totalCustomersServed.toString()
-                        : (_isStatsLoading ? '…' : '0'),
-                    color: _green,
-                  ),
-                  _KpiCard(
-                    icon: Icons.payments_outlined,
-                    label: 'dashboard.revenue_generated'.tr(),
-                    value: stats != null
-                        ? '\$${stats.totalRevenueGenerated.toStringAsFixed(2)}'
-                        : (_isStatsLoading ? '…' : '\$0.00'),
-                    color: _blue,
-                  ),
-                  _KpiCard(
-                    icon: Icons.verified_rounded,
-                    label: 'dashboard.reward_approvals'.tr(),
-                    value: stats != null
-                        ? stats.totalRewardApprovalsApproved.toString()
-                        : (_isStatsLoading ? '…' : '0'),
-                    color: _orange,
-                  ),
-                  _KpiCard(
-                    icon: Icons.receipt_long_rounded,
-                    label: 'dashboard.visits_handled'.tr(),
-                    value: stats != null
-                        ? stats.totalVisitsHandled.toString()
-                        : (_isStatsLoading ? '…' : '0'),
-                    color: _amber,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 28),
-
-              // ════════════════════════════════════════════════════════
-              // 2. QUICK ACTIONS
-              // ════════════════════════════════════════════════════════
-              _SectionTitle(title: 'home.quick_actions'.tr(), icon: Icons.bolt_rounded),
-              const SizedBox(height: 14),
-              _QuickActions(isOwner: isOwner),
-
-              const SizedBox(height: 28),
-
-              // ════════════════════════════════════════════════════════
-              // 3. LIVE ACTIVITY FEED
-              // ════════════════════════════════════════════════════════
-              _SectionTitle(title: 'home.activity_feed'.tr(), icon: Icons.stream),
-              const SizedBox(height: 14),
-              _ActivityFeed(entries: _feedEntries, visits: _visits),
-
-              const SizedBox(height: 28),
-
-              // ════════════════════════════════════════════════════════
-              // 4. ALERTS & INSIGHTS
-              // ════════════════════════════════════════════════════════
-              if (_alerts.isNotEmpty) ...[
-                _SectionTitle(title: 'home.alerts'.tr(), icon: Icons.notifications_active_outlined),
-                const SizedBox(height: 14),
-                _AlertsPanel(alerts: _alerts),
-                const SizedBox(height: 28),
-              ],
-
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
@@ -417,11 +460,14 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
   }
 
   String? _restaurantId(
-      Map<String, dynamic> restaurant,
-      Map<String, dynamic> profile,
-      ) {
+    Map<String, dynamic> restaurant,
+    Map<String, dynamic> profile,
+  ) {
     final dynamic rawId =
-        restaurant['_id'] ?? profile['_id'] ?? restaurant['id'] ?? profile['id'];
+        restaurant['_id'] ??
+        profile['_id'] ??
+        restaurant['id'] ??
+        profile['id'];
     final id = rawId?.toString().trim();
     if (id == null || id.isEmpty) return null;
     return id;
@@ -477,22 +523,31 @@ class _KpiGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      int crossCount = 2;
-      if (constraints.maxWidth >= 800) crossCount = 4;
-      else if (constraints.maxWidth < 300) crossCount = 1;
-      
-      final width = (constraints.maxWidth - (crossCount - 1) * 12) / crossCount;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        int crossCount = 2;
+        if (constraints.maxWidth >= 800)
+          crossCount = 4;
+        else if (constraints.maxWidth < 300)
+          crossCount = 1;
 
-      return Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        children: cards.map((c) => SizedBox(
-          width: width,
-          child: _KpiTile(card: c),
-        )).toList(),
-      );
-    });
+        final width =
+            (constraints.maxWidth - (crossCount - 1) * 12) / crossCount;
+
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: cards
+              .map(
+                (c) => SizedBox(
+                  width: width,
+                  child: _KpiTile(card: c),
+                ),
+              )
+              .toList(),
+        );
+      },
+    );
   }
 }
 
@@ -567,72 +622,74 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      final wide = constraints.maxWidth >= 600;
-      final actions = <Widget>[
-        // Redeem Reward — triggers RewardRedemption creation
-        // (status: 'pending' → employee marks as 'redeemed')
-        _ActionButton(
-          icon: Icons.card_giftcard_rounded,
-          label: 'home.redeem_reward'.tr(),
-          sublabel: 'home.scan_approve'.tr(),
-          color: _blue,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const CustomerQrScannerScreen(),
-              ),
-            );
-          },
-        ),
-        // Add Visit & Points — creates Visit + updates PointsWallet
-        _ActionButton(
-          icon: Icons.add_circle_outline,
-          label: 'home.add_visit'.tr(),
-          sublabel: 'home.scan_assign'.tr(),
-          color: _green,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const CustomerQrScannerScreen(),
-              ),
-            );
-          },
-        ),
-        if (isOwner)
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 600;
+        final actions = <Widget>[
+          // Redeem Reward — triggers RewardRedemption creation
+          // (status: 'pending' → employee marks as 'redeemed')
           _ActionButton(
-            icon: Icons.settings_outlined,
-            label: 'home.settings'.tr(),
-            sublabel: 'home.restaurant_config'.tr(),
-            color: _orange,
+            icon: Icons.card_giftcard_rounded,
+            label: 'home.redeem_reward'.tr(),
+            sublabel: 'home.scan_approve'.tr(),
+            color: _blue,
             onTap: () {
-              // TODO: navigate to settings
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const CustomerQrScannerScreen(),
+                ),
+              );
             },
           ),
-      ];
+          // Add Visit & Points — creates Visit + updates PointsWallet
+          _ActionButton(
+            icon: Icons.add_circle_outline,
+            label: 'home.add_visit'.tr(),
+            sublabel: 'home.scan_assign'.tr(),
+            color: _green,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const CustomerQrScannerScreen(),
+                ),
+              );
+            },
+          ),
+          if (isOwner)
+            _ActionButton(
+              icon: Icons.settings_outlined,
+              label: 'home.settings'.tr(),
+              sublabel: 'home.restaurant_config'.tr(),
+              color: _orange,
+              onTap: () {
+                // TODO: navigate to settings
+              },
+            ),
+        ];
 
-      if (wide) {
-        return Row(
+        if (wide) {
+          return Row(
+            children: [
+              for (int i = 0; i < actions.length; i++) ...[
+                if (i > 0) const SizedBox(width: 12),
+                Expanded(child: actions[i]),
+              ],
+            ],
+          );
+        }
+
+        return Column(
           children: [
             for (int i = 0; i < actions.length; i++) ...[
-              if (i > 0) const SizedBox(width: 12),
-              Expanded(child: actions[i]),
-            ]
+              if (i > 0) const SizedBox(height: 12),
+              actions[i],
+            ],
           ],
         );
-      }
-
-      return Column(
-        children: [
-          for (int i = 0; i < actions.length; i++) ...[
-            if (i > 0) const SizedBox(height: 12),
-            actions[i],
-          ]
-        ],
-      );
-    });
+      },
+    );
   }
 }
 
@@ -678,19 +735,23 @@ class _ActionButton extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                        color: _dark,
-                      )),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: _dark,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(sublabel,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: _grey,
-                        fontWeight: FontWeight.w500,
-                      )),
+                  Text(
+                    sublabel,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: _grey,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -729,7 +790,10 @@ class _ActivityFeed extends StatelessWidget {
             Text(
               'home.no_activity'.tr(),
               style: const TextStyle(
-                  fontWeight: FontWeight.w800, fontSize: 16, color: _dark),
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+                color: _dark,
+              ),
             ),
             const SizedBox(height: 6),
             const Text(
@@ -753,7 +817,12 @@ class _ActivityFeed extends StatelessWidget {
         children: entries
             .asMap()
             .entries
-            .map((e) => _FeedTile(entry: e.value, isLast: e.key == entries.length - 1))
+            .map(
+              (e) => _FeedTile(
+                entry: e.value,
+                isLast: e.key == entries.length - 1,
+              ),
+            )
             .toList(),
       ),
     );
@@ -850,10 +919,14 @@ class _AlertsPanel extends StatelessWidget {
       children: alerts
           .asMap()
           .entries
-          .map((e) => Padding(
-        padding: EdgeInsets.only(bottom: e.key < alerts.length - 1 ? 10 : 0),
-        child: _AlertTile(alert: e.value),
-      ))
+          .map(
+            (e) => Padding(
+              padding: EdgeInsets.only(
+                bottom: e.key < alerts.length - 1 ? 10 : 0,
+              ),
+              child: _AlertTile(alert: e.value),
+            ),
+          )
           .toList(),
     );
   }

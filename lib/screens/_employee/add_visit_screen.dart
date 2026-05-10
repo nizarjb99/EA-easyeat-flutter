@@ -41,7 +41,8 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
 
     // If it's a Map, check multiple possible keys
     if (restaurant is Map<String, dynamic>) {
-      final rawId = restaurant['_id'] ??
+      final rawId =
+          restaurant['_id'] ??
           restaurant['id'] ??
           restaurant['restaurant_id'] ??
           restaurant['restaurantId'];
@@ -65,11 +66,16 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
 
     // Try provider restaurant first, then fallback to currentEmployee.restaurantId
     final restaurantFromProvider = _restaurantId(auth.restaurant);
-    final restaurantFromEmployee = auth.currentEmployee?.restaurantId?.toString().trim();
-    final restaurantId = restaurantFromProvider ?? (restaurantFromEmployee != null && restaurantFromEmployee.isNotEmpty ? restaurantFromEmployee : null);
+    final restaurantFromEmployee = auth.currentEmployee?.restaurantId
+        ?.toString()
+        .trim();
+    final restaurantId =
+        restaurantFromProvider ??
+        (restaurantFromEmployee != null && restaurantFromEmployee.isNotEmpty
+            ? restaurantFromEmployee
+            : null);
 
     final token = auth.accessToken;
-
 
     if (employeeId == null || employeeId.isEmpty) {
       _showError('Employee not authenticated');
@@ -95,7 +101,6 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
     setState(() => _isSaving = true);
 
     try {
-
       final createdVisit = await _visitService.createVisit(
         token: token,
         customerId: customerId,
@@ -109,10 +114,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
       Navigator.pushReplacementNamed(
         context,
         '/visit-confirmation',
-        arguments: {
-          'visit': createdVisit,
-          'customerName': customerName,
-        },
+        arguments: {'visit': createdVisit, 'customerName': customerName},
       );
     } catch (e) {
       if (!mounted) return;
@@ -136,7 +138,8 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final customerId = (args?['customerId'] ?? '').toString();
     final customerName = (args?['customerName'] ?? 'Customer').toString();
 
@@ -190,10 +193,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                     const SizedBox(height: 4),
                     Text(
                       customerId,
-                      style: const TextStyle(
-                        color: _grey,
-                        fontSize: 11,
-                      ),
+                      style: const TextStyle(color: _grey, fontSize: 11),
                     ),
                   ],
                 ),
@@ -216,7 +216,10 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                   hintText: 'Enter bill amount',
                   filled: true,
                   fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: _grey),
@@ -251,14 +254,17 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                   onPressed: _isSaving
                       ? null
                       : () => _submitVisit(
-                            customerId: customerId,
-                            customerName: customerName,
-                          ),
+                          customerId: customerId,
+                          customerName: customerName,
+                        ),
                   child: _isSaving
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
                       : const Text(
                           'Save Visit & Assign Points',

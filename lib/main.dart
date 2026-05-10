@@ -13,9 +13,11 @@ import 'screens/_auth/legal_notice_screen.dart';
 import 'screens/app_entry_point.dart';
 import 'screens/_employee/add_visit_screen.dart';
 import 'screens/_employee/visit_confirmation_screen.dart';
+import 'screens/_employee/exchange_reward_screen.dart';
+import 'screens/_employee/exchange_confirmation_screen.dart';
 
 // lib/main.dart (Key section)
-import 'providers/location_provider.dart';  // ADD THIS
+import 'providers/location_provider.dart'; // ADD THIS
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,7 +36,7 @@ void main() async {
         providers: [
           ChangeNotifierProvider(create: (_) => AuthProvider()),
           ChangeNotifierProvider(create: (_) => RestaurantProvider()),
-          ChangeNotifierProvider(create: (_) => locationProvider),  // ADD THIS
+          ChangeNotifierProvider(create: (_) => locationProvider), // ADD THIS
         ],
         child: EventManagerApp(),
       ),
@@ -65,6 +67,9 @@ class EventManagerApp extends StatelessWidget {
         '/add-visit': (context) => const AddVisitScreen(),
         '/visit-confirmation': (context) => const VisitConfirmationScreen(),
         '/aviso-legal': (context) => const LegalNoticePage(),
+        '/exchange-reward': (context) => const ExchangeRewardScreen(),
+        '/exchange-confirmation': (context) =>
+            const ExchangeConfirmationScreen(),
       },
     );
   }
