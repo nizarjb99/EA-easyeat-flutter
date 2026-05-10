@@ -1,0 +1,88 @@
+{
+  "dashboard": {
+    "overview": "Resum",
+    "points": "Punts",
+    "roles": {
+      "customer": "Client",
+      "staff": "Personal",
+      "owner": "Propietari",
+      "user_fallback": "Usuari"
+    },
+    "logout": "Tancar sessió",
+    "customers_served": "Clients atesos",
+    "revenue_generated": "Ingressos generats",
+    "reward_approvals": "Canvis aprovats",
+    "visits_handled": "Visites gestionades",
+    "points_available": "Punts disponibles",
+    "visits": "Visites",
+    "avg_rating": "Qualificació mitjana",
+    "favorite_restaurants": "Restaurants preferits",
+    "welcome_back": "Benvingut de nou,",
+    "discover_flavors": "Descobreix sabors que t'esperen avui"
+  },
+  "home": {
+    "quick_actions": "Accions ràpides",
+    "activity_feed": "Activitat en viu",
+    "alerts": "Alertes i informació",
+    "redeem_reward": "Canviar recompensa",
+    "scan_approve": "Escanejar i aprovar canvi",
+    "add_visit": "Afegir visita i assignar punts",
+    "scan_assign": "Escanejar client per assignar punts",
+    "settings": "Ajustos",
+    "restaurant_config": "Configuració del restaurant",
+    "no_activity": "Sense activitat recent",
+    "earned_points": "{} ha guanyat {} punts",
+    "fewer_visits": "Menys visites de l'habitual avui.",
+    "managing": "Gestionant",
+    "tu_restaurante": "El teu restaurant"
+  },
+  "discover": {
+    "title": "Descobrir",
+    "search_placeholder": "Buscar restaurants...",
+    "all_cities": "Totes les ciutats",
+    "all_categories": "Totes les categories",
+    "no_results": "Cap restaurant coincideix amb la teva cerca.",
+    "open_map": "Obrir mapa",
+    "search_by_name": "Buscar per nom de restaurant..."
+  },
+  "profile": {
+    "title": "El meu Perfil",
+    "name": "Nom",
+    "email": "Correu electrònic",
+    "restaurant": "Restaurant",
+    "not_assigned": "No assignat",
+    "error_session": "Error: Sessió d'usuari no trobada o no iniciada"
+  },
+  "sidebar": {
+    "home": "Inici",
+    "discover": "Descobrir",
+    "profile": "Perfil",
+    "points": "Punts"
+  },
+  "customer": {
+    "search_hint": "Buscar restaurants o ciutats...",
+    "recommended": "Restaurants recomanats",
+    "no_restaurants": "Encara no hi ha restaurants carregats",
+    "connect_endpoint": "El login de customer ja està separat. El següent pas és connectar aquesta llista a l'endpoint /restaurants.",
+    "show_qr": "Mostrar el meu QR",
+    "qr_sublabel": "Fes-lo servir per guanyar o canviar punts al restaurant"
+  },
+  "wallet": {
+    "title": "La meva Cartera de Punts",
+    "refresh": "Actualitzar",
+    "error_title": "No s'ha pogut carregar la cartera de punts",
+    "try_again": "Reintentar",
+    "no_points_title": "Sense punts encara",
+    "no_points_subtitle": "La teva cartera apareixerà aquí quan comencis a guanyar punts amb les teves visites.",
+    "entries_title": "Entrades de la cartera",
+    "hello": "Hola, {}",
+    "balance_label": "El teu saldo de punts",
+    "records_label": "Registres",
+    "last_update_label": "Última actualització",
+    "updated_at": "Actualitzat: {}",
+    "wallet_id": "ID de Cartera: {}",
+    "points_unit": "punts",
+    "info_banner": "Els punts s'actualitzen quan s'afegeix una visita o es canvia una recompensa. Llisca cap avall per actualitzar el saldo.",
+    "not_logged_in": "Has d'iniciar sessió com a client per veure la teva cartera de punts."
+  }
+}

@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../utils/constants.dart';
 import '../models/customer.dart';
+import '../models/customerStats.dart';
 
 class CustomerService {
   final String baseUrl = '${AppConstants.baseUrl}/customers';
@@ -152,5 +154,40 @@ class CustomerService {
     if (response.statusCode != 200) {
       throw Exception(json.decode(response.body)['message'] ?? 'Failed to restore customer');
     }
+  }
+
+  Future<CustomerStatistics> fetchCustomerStatistics(
+    String customerId, {
+    String? accessToken,
+  }) async {
+    final uri = Uri.parse('$baseUrl/$customerId/statistics');
+
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      if (accessToken != null && accessToken.isNotEmpty)
+        'Authorization': 'Bearer $accessToken',
+    };
+
+    final response = await http
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        'Failed to load customer statistics (${response.statusCode})',
+      );
+    }
+
+    final dynamic body = json.decode(response.body);
+
+    if (body is Map<String, dynamic>) {
+      final data = body['data'];
+      if (data is Map<String, dynamic>) {
+        return CustomerStatistics.fromJson(data);
+      }
+      return CustomerStatistics.fromJson(body);
+    }
+
+    throw Exception('Unexpected customer statistics response format');
   }
 }

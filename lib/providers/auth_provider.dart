@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/customer.dart';
 import '../models/employee.dart';
 import '../services/auth_service.dart';
+import '../services/restaurant_service.dart';
 
 enum AuthAccountType { none, customer, employee }
 
@@ -143,6 +144,19 @@ class AuthProvider extends ChangeNotifier {
         throw Exception('Unexpected server response: missing access token');
       }
 
+      if (isEmployee && _currentEmployee != null) {
+        try {
+          final restaurantService = RestaurantService();
+          final fullRestaurant = await restaurantService.fetchFullRestaurantById(
+            _currentEmployee!.restaurantId,
+            accessToken: _accessToken,
+          );
+          _restaurant = fullRestaurant;
+        } catch (e) {
+          debugPrint('Error fetching full restaurant: $e');
+        }
+      }
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -178,12 +192,14 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final Map<String, dynamic> rawUser = await _authService.fetchUserById(id!, _accessToken!);
-
       if (isCustomer) {
-        _currentCustomer = Customer.fromJson(rawUser);
+        final Map<String, dynamic> rawUser = await _authService.fetchCustomerById(id!, _accessToken!);
+        final data = rawUser['data'] ?? rawUser;
+        _currentCustomer = Customer.fromJson(data);
       } else if (isEmployee) {
-        _currentEmployee = Employee.fromJson(rawUser);
+        final Map<String, dynamic> rawUser = await _authService.fetchEmployeeById(id!, _accessToken!);
+        final data = rawUser['data'] ?? rawUser;
+        _currentEmployee = Employee.fromJson(data);
       }
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');

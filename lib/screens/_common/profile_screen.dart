@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../providers/auth_provider.dart';
-// import 'login_screen.dart'; // Removed unused import
+import '../../widgets/language_dropdown_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -15,7 +16,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
 
-    // Fetch full user data (including populated organization) when profile opens.
     Future.microtask(() {
       if (!mounted) return;
       context.read<AuthProvider>().loadProfileFromApi();
@@ -28,23 +28,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isLoading = authProvider.isLoading;
     final errorMessage = authProvider.errorMessage;
 
-    // Use displayName, email, and restaurant from AuthProvider directly
     final String displayName = authProvider.displayName;
     final String? email = authProvider.email;
-    final String? restaurantName = authProvider.restaurant?['name'];
+    final restaurantData = authProvider.restaurant;
+    final String? restaurantName = restaurantData?['profile']?['name'] ?? restaurantData?['name'];
 
-    // Check if there's any logged-in user (customer or employee)
     if (!authProvider.isLoggedIn) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Profile')),
-        body: const Center(child: Text('Error: User session not found or not logged in')),
+        appBar: AppBar(title: Text('profile.title'.tr())),
+        body: Center(child: Text('profile.error_session'.tr())),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Profile'),
+        title: Text('profile.title'.tr()),
         centerTitle: true,
+        actions: [
+          LanguageDropdownWidget(),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -78,7 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     ListTile(
                       leading: const Icon(Icons.person_outline),
-                      title: const Text('Name'),
+                      title: Text('profile.name'.tr()),
                       subtitle: Text(
                         displayName,
                         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -87,19 +90,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const Divider(),
                     ListTile(
                       leading: const Icon(Icons.email_outlined),
-                      title: const Text('Email'),
+                      title: Text('profile.email'.tr()),
                       subtitle: Text(
-                        email ?? 'N/A', // Display N/A if email is null
+                        email ?? 'N/A',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
-                    if (authProvider.isEmployee) ...[ // Only show restaurant for employees
+                    if (authProvider.isEmployee) ...[
                       const Divider(),
                       ListTile(
                         leading: const Icon(Icons.business),
-                        title: const Text('Restaurante'),
+                        title: Text('profile.restaurant'.tr()),
                         subtitle: Text(
-                          restaurantName ?? 'No asignado',
+                          restaurantName ?? 'profile.not_assigned'.tr(),
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -108,7 +111,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
             const SizedBox(height: 30),
             SizedBox(
               width: double.infinity,
@@ -122,7 +124,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 icon: const Icon(Icons.logout),
-                label: const Text('Log out', style: TextStyle(fontSize: 16)),
+                label: Text('dashboard.logout'.tr(), style: const TextStyle(fontSize: 16)),
                 onPressed: () {
                   context.read<AuthProvider>().logout();
                 },

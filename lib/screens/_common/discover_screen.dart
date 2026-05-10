@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:ea_easyeat_flutter/models/restaurant.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:ea_easyeat_flutter/screens/_common/restaurant_card.dart';
 import 'package:ea_easyeat_flutter/services/restaurant_service.dart';
 import 'package:ea_easyeat_flutter/screens/_common/restaurant_detail_screen.dart';
+import 'package:ea_easyeat_flutter/screens/_common/map_screen.dart';
+import 'package:easy_localization/easy_localization.dart';
+import '../../widgets/language_dropdown_widget.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
@@ -22,6 +26,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   List<Restaurant> _filteredRestaurants = [];
   Set<String> _availableCities = {};
   Set<String> _availableCategories = {};
+  Position? _userLocation;
 
   @override
   void initState() {
@@ -43,6 +48,18 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         return matchesName && matchesCity && matchesCategory;
       }).toList();
     });
+  }
+
+  String _calculateDistance(Restaurant restaurant){
+    if (_userLocation == null) return "-- km";
+    final coords = restaurant.profile.location.coordinates.coordinates;
+    final distance = Geolocator.distanceBetween(
+      _userLocation!.latitude,
+      _userLocation!.longitude,
+      restaurant.profile.location.coordinates.coordinates[1],
+      restaurant.profile.location.coordinates.coordinates[0],
+    );
+    return "${(distance / 1000).toStringAsFixed(1)} km";
   }
 
   Future<void> _fetchRestaurants() async {
@@ -71,8 +88,23 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Discover'),
+        title: Text('discover.title'.tr()),
         centerTitle: true,
+        actions: [
+          LanguageDropdownWidget(),
+          IconButton(
+            icon: const Icon(Icons.map),
+            tooltip: 'discover.open_map'.tr(),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MapScreen( ),
+                ),
+              );
+            },
+          ),
+        ]
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -89,7 +121,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           _filterRestaurants();
                         },
                         decoration: InputDecoration(
-                          hintText: 'Search by restaurant name...',
+                          hintText: 'discover.search_by_name'.tr(),
                           prefixIcon: const Icon(Icons.search),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8.0),
@@ -107,15 +139,15 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             // City Filter
                             DropdownButton<String?>(
                               value: _selectedCity,
-                              hint: const Text('All Cities'),
+                              hint: Text('discover.all_cities'.tr()),
                               onChanged: (value) {
                                 setState(() => _selectedCity = value);
                                 _filterRestaurants();
                               },
                               items: [
-                                const DropdownMenuItem(
+                                DropdownMenuItem(
                                   value: null,
-                                  child: Text('All Cities'),
+                                  child: Text('discover.all_cities'.tr()),
                                 ),
                                 ..._availableCities.map((city) =>
                                     DropdownMenuItem(
@@ -124,19 +156,19 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                     )),
                               ],
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 16),
                             // Category Filter
                             DropdownButton<String?>(
                               value: _selectedCategory,
-                              hint: const Text('All Categories'),
+                              hint: Text('discover.all_categories'.tr()),
                               onChanged: (value) {
                                 setState(() => _selectedCategory = value);
                                 _filterRestaurants();
                               },
                               items: [
-                                const DropdownMenuItem(
+                                DropdownMenuItem(
                                   value: null,
-                                  child: Text('All Categories'),
+                                  child: Text('discover.all_categories'.tr()),
                                 ),
                                 ..._availableCategories.map((category) =>
                                     DropdownMenuItem(
@@ -152,8 +184,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     // Results ListView
                     Expanded(
                       child: _filteredRestaurants.isEmpty
-                          ? const Center(
-                              child: Text('No restaurants match your search.'))
+                          ? Center(
+                              child: Text('discover.no_results'.tr()))
                           : ListView.builder(
                               padding: const EdgeInsets.all(16.0),
                               itemCount: _filteredRestaurants.length,
@@ -162,21 +194,18 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 16.0),
                                   child: RestaurantCard(
-                                    restaurant: restaurant,
-                                    distance: "2.5 km",
-                                    pointsMultiplier: 2,
-                                    hasSpecialOffer: index % 3 == 0,
-                                    onClick: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              RestaurantDetailScreen(
-                                                  restaurant: restaurant),
-                                        ),
-                                      );
-                                    },
-                                  ),
+                                      restaurant: restaurant,
+                                      distance: _calculateDistance(restaurant),
+                                      onClick: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                RestaurantDetailScreen(restaurant: restaurant),
+                                          ),
+                                        );
+                                      },
+                                    ),
                                 );
                               },
                             ),
@@ -185,4 +214,4 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 ),
     );
   }
-}
+}
