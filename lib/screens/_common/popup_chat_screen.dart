@@ -38,10 +38,12 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
   bool _isLoading = false;
   bool _isSending = false;
   bool _socketConnected = false;
+  bool _isDisposed = false;
 
   String? _error;
   String? _currentUserId;
   String? _currentRestaurantId;
+
   String _senderRole = 'customer';
   bool _isEmployee = false;
 
@@ -52,11 +54,20 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
 
   bool get _hasSelectedConversation => _selectedConversation != null;
 
+  bool get _canUseState => !_isDisposed && mounted;
+
+  void _safeSetState(VoidCallback fn) {
+    if (!_canUseState) return;
+    setState(fn);
+  }
+
   @override
   void initState() {
     super.initState();
 
     Future.microtask(() async {
+      if (!_canUseState) return;
+
       final auth = context.read<AuthProvider>();
 
       _isEmployee = auth.isEmployee;
@@ -70,7 +81,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
       }
 
       if (_currentUserId == null || _currentUserId!.isEmpty) {
-        setState(() {
+        _safeSetState(() {
           _error = 'No s’ha pogut obtenir l’ID de l’usuari actual.';
         });
         return;
@@ -88,8 +99,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
 
   @override
   void dispose() {
-    _messageController.dispose();
-    _scrollController.dispose();
+    _isDisposed = true;
 
     if (_selectedConversation != null) {
       _socket?.emit('chat:leaveConversation', {
@@ -97,9 +107,20 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
       });
     }
 
+    _socket?.off('connect');
+    _socket?.off('disconnect');
+    _socket?.off('connect_error');
+    _socket?.off('error');
+    _socket?.off('chat:newMessage');
+    _socket?.off('chat:conversationUpdated');
+    _socket?.off('chat:error');
+
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;
+
+    _messageController.dispose();
+    _scrollController.dispose();
 
     super.dispose();
   }
@@ -111,37 +132,37 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
     );
 
     _socket!.onConnect((_) {
-      if (!mounted) return;
+      if (!_canUseState) return;
 
-      setState(() {
+      _safeSetState(() {
         _socketConnected = true;
       });
 
       if (_isEmployee) {
         if (_currentRestaurantId != null && _currentRestaurantId!.isNotEmpty) {
-          _socket!.emit('chat:joinRestaurant', {
+          _socket?.emit('chat:joinRestaurant', {
             'restaurantId': _currentRestaurantId,
           });
         }
       } else {
         if (_currentUserId != null && _currentUserId!.isNotEmpty) {
-          _socket!.emit('chat:joinCustomer', {
+          _socket?.emit('chat:joinCustomer', {
             'customerId': _currentUserId,
           });
         }
       }
 
       if (_selectedConversation != null) {
-        _socket!.emit('chat:joinConversation', {
+        _socket?.emit('chat:joinConversation', {
           'conversationId': _selectedConversation!.id,
         });
       }
     });
 
     _socket!.onDisconnect((_) {
-      if (!mounted) return;
+      if (!_canUseState) return;
 
-      setState(() {
+      _safeSetState(() {
         _socketConnected = false;
       });
     });
@@ -149,9 +170,9 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
     _socket!.onConnectError((error) {
       debugPrint('SOCKET CONNECT ERROR: $error');
 
-      if (!mounted) return;
+      if (!_canUseState) return;
 
-      setState(() {
+      _safeSetState(() {
         _socketConnected = false;
         _error =
             'No s’ha pogut connectar amb el xat en temps real. Comprova que el backend estigui encès i que API_BASE_URL sigui correcte.';
@@ -161,15 +182,17 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
     _socket!.onError((error) {
       debugPrint('SOCKET ERROR: $error');
 
-      if (!mounted) return;
+      if (!_canUseState) return;
 
-      setState(() {
+      _safeSetState(() {
         _error = 'Error de socket: $error';
       });
     });
 
     _socket!.on('chat:newMessage', (data) {
-      if (!mounted || data == null || _selectedConversation == null) return;
+      if (!_canUseState || data == null || _selectedConversation == null) {
+        return;
+      }
 
       final message = _ChatMessage.fromJson(
         Map<String, dynamic>.from(data as Map),
@@ -180,7 +203,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
       final alreadyExists = _messages.any((item) => item.id == message.id);
       if (alreadyExists) return;
 
-      setState(() {
+      _safeSetState(() {
         _messages.add(message);
       });
 
@@ -188,7 +211,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
     });
 
     _socket!.on('chat:conversationUpdated', (_) {
-      if (!mounted) return;
+      if (!_canUseState) return;
 
       if (!_hasSelectedConversation && !_openedFromRestaurant) {
         _loadConversationsForCurrentUser();
@@ -196,9 +219,9 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
     });
 
     _socket!.on('chat:error', (data) {
-      if (!mounted) return;
+      if (!_canUseState) return;
 
-      setState(() {
+      _safeSetState(() {
         _error = data.toString();
       });
     });
@@ -209,7 +232,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
   Future<void> _openConversationFromRestaurant() async {
     if (_currentUserId == null || widget.restaurantId == null) return;
 
-    setState(() {
+    _safeSetState(() {
       _isLoading = true;
       _error = null;
     });
@@ -220,7 +243,9 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
         restaurantId: widget.restaurantId!,
       );
 
-      setState(() {
+      if (!_canUseState) return;
+
+      _safeSetState(() {
         _selectedConversation = conversation;
       });
 
@@ -230,13 +255,11 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
 
       await _loadConversationMessages(conversation.id);
     } catch (e) {
-      setState(() {
+      _safeSetState(() {
         _error = e.toString();
       });
     } finally {
-      if (!mounted) return;
-
-      setState(() {
+      _safeSetState(() {
         _isLoading = false;
       });
     }
@@ -245,7 +268,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
   Future<void> _loadConversationsForCurrentUser() async {
     if (_currentUserId == null) return;
 
-    setState(() {
+    _safeSetState(() {
       _isLoading = true;
       _error = null;
     });
@@ -276,10 +299,13 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
       }
 
       final decoded = jsonDecode(response.body);
-      final rawData = decoded is Map<String, dynamic> ? decoded['data'] : decoded;
+      final rawData =
+          decoded is Map<String, dynamic> ? decoded['data'] : decoded;
       final List<dynamic> list = rawData is List ? rawData : [];
 
-      setState(() {
+      if (!_canUseState) return;
+
+      _safeSetState(() {
         _conversations
           ..clear()
           ..addAll(
@@ -291,13 +317,11 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
           );
       });
     } catch (e) {
-      setState(() {
+      _safeSetState(() {
         _error = e.toString();
       });
     } finally {
-      if (!mounted) return;
-
-      setState(() {
+      _safeSetState(() {
         _isLoading = false;
       });
     }
@@ -323,7 +347,8 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
     }
 
     final decoded = jsonDecode(response.body);
-    final rawData = decoded is Map<String, dynamic> ? decoded['data'] : decoded;
+    final rawData =
+        decoded is Map<String, dynamic> ? decoded['data'] : decoded;
 
     return _ChatConversation.fromJson(
       Map<String, dynamic>.from(rawData as Map),
@@ -337,7 +362,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
       });
     }
 
-    setState(() {
+    _safeSetState(() {
       _selectedConversation = conversation;
       _messages.clear();
       _error = null;
@@ -351,7 +376,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
   }
 
   Future<void> _loadConversationMessages(String conversationId) async {
-    setState(() {
+    _safeSetState(() {
       _isLoading = true;
       _error = null;
     });
@@ -368,10 +393,13 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
       }
 
       final decoded = jsonDecode(response.body);
-      final rawData = decoded is Map<String, dynamic> ? decoded['data'] : decoded;
+      final rawData =
+          decoded is Map<String, dynamic> ? decoded['data'] : decoded;
       final List<dynamic> list = rawData is List ? rawData : [];
 
-      setState(() {
+      if (!_canUseState) return;
+
+      _safeSetState(() {
         _messages
           ..clear()
           ..addAll(
@@ -385,13 +413,11 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
 
       _scrollToBottomDelayed();
     } catch (e) {
-      setState(() {
+      _safeSetState(() {
         _error = e.toString();
       });
     } finally {
-      if (!mounted) return;
-
-      setState(() {
+      _safeSetState(() {
         _isLoading = false;
       });
     }
@@ -404,7 +430,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
       return;
     }
 
-    setState(() {
+    _safeSetState(() {
       _isSending = true;
       _error = null;
     });
@@ -425,7 +451,9 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
           contenido: text,
         );
 
-        setState(() {
+        if (!_canUseState) return;
+
+        _safeSetState(() {
           _messages.add(createdMessage);
         });
       }
@@ -433,13 +461,11 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
       _messageController.clear();
       _scrollToBottomDelayed();
     } catch (e) {
-      setState(() {
+      _safeSetState(() {
         _error = e.toString();
       });
     } finally {
-      if (!mounted) return;
-
-      setState(() {
+      _safeSetState(() {
         _isSending = false;
       });
     }
@@ -470,7 +496,8 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
     }
 
     final decoded = jsonDecode(response.body);
-    final rawData = decoded is Map<String, dynamic> ? decoded['data'] : decoded;
+    final rawData =
+        decoded is Map<String, dynamic> ? decoded['data'] : decoded;
 
     return _ChatMessage.fromJson(
       Map<String, dynamic>.from(rawData as Map),
@@ -489,7 +516,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
       });
     }
 
-    setState(() {
+    _safeSetState(() {
       _selectedConversation = null;
       _messages.clear();
     });
@@ -499,6 +526,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
 
   void _scrollToBottomDelayed() {
     Future.delayed(const Duration(milliseconds: 150), () {
+      if (!_canUseState) return;
       if (!_scrollController.hasClients) return;
 
       _scrollController.animateTo(
@@ -570,7 +598,9 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
                   ),
                 ),
                 Icon(
-                  _socketConnected ? Icons.wifi_rounded : Icons.wifi_off_rounded,
+                  _socketConnected
+                      ? Icons.wifi_rounded
+                      : Icons.wifi_off_rounded,
                   color: _socketConnected ? Colors.green : Colors.grey,
                   size: 20,
                 ),
@@ -635,7 +665,9 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
               Icon(Icons.forum_outlined, color: orange, size: 52),
               const SizedBox(height: 14),
               Text(
-                _isEmployee ? 'Encara no hi ha xats' : 'Encara no tens converses',
+                _isEmployee
+                    ? 'Encara no hi ha xats'
+                    : 'Encara no tens converses',
                 style: TextStyle(
                   color: dark,
                   fontSize: 18,
@@ -668,7 +700,8 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
             ? conversation.customerName
             : conversation.restaurantName;
 
-        final subtitle = conversation.lastMessageText ?? 'Sense missatges encara';
+        final subtitle =
+            conversation.lastMessageText ?? 'Sense missatges encara';
 
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
@@ -862,9 +895,8 @@ class _ChatConversation {
       restaurantId: _extractIdFromValue(restaurant),
       customerName: _extractPersonName(customer, fallback: 'Client'),
       restaurantName: _extractRestaurantName(restaurant),
-      lastMessageText: lastMessage is Map
-          ? lastMessage['contenido']?.toString()
-          : null,
+      lastMessageText:
+          lastMessage is Map ? lastMessage['contenido']?.toString() : null,
     );
   }
 }
