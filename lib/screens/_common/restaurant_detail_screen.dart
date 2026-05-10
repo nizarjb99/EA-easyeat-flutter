@@ -7,7 +7,7 @@ import '../../widgets/reward_card.dart';
 import '../../widgets/dish_card.dart';
 import '../../widgets/dish_skeleton_card.dart';
 import '../_customer/qr_code_screen.dart';
-
+import '../_common/popup_chat_screen.dart';
 
 // ---------------------------------------------------------------------------
 // PANTALLA PRINCIPAL
@@ -450,16 +450,55 @@ class _RestaurantInfoSection extends StatelessWidget {
               ),
             ),
           if (contact?.email != null)
-            _InfoRow(
-              icon: Icons.email_rounded,
-              accentColor: accentColor,
-              orangeLight: orangeLight,
-              child: Text(
-                contact!.email!,
-                style: TextStyle(color: textMuted, fontSize: 13),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
+  _InfoRow(
+    icon: Icons.email_rounded,
+    accentColor: accentColor,
+    orangeLight: orangeLight,
+    child: Text(
+      contact!.email!,
+      style: TextStyle(color: textMuted, fontSize: 13),
+      overflow: TextOverflow.ellipsis,
+    ),
+  ),
+
+const SizedBox(height: 16),
+
+SizedBox(
+  width: double.infinity,
+  height: 56,
+  child: ElevatedButton.icon(
+    onPressed: () {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) {
+          return PopupChatScreen(
+            restaurantId: restaurant.id,
+            restaurantName: restaurant.profile.name,
+          );
+        },
+      );
+    },
+    icon: const Icon(Icons.chat_bubble_outline_rounded),
+    label: const Text(
+      'Xateja amb el restaurant',
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w800,
+      ),
+    ),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: accentColor,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
+    ),
+  ),
+),
+            
         ],
       ),
     );

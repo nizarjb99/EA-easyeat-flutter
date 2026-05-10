@@ -4,6 +4,9 @@ import 'package:easy_localization/easy_localization.dart';
 
 import 'providers/auth_provider.dart';
 import 'providers/restaurant_provider.dart';
+import 'providers/location_provider.dart';
+import 'providers/chat_provider.dart';
+
 import 'utils/styles.dart';
 
 import 'screens/_auth/landing_screen.dart';
@@ -23,7 +26,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
 
-  // Initialize location provider
   final locationProvider = LocationProvider();
   await locationProvider.initialize();
 
