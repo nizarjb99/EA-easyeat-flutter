@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../_common/navigation_screen.dart';
+import '../../widgets/landing_footer.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -57,7 +58,7 @@ class _HomePageState extends State<HomePage> {
               restaurantesKey: restaurantesKey,
             ),
             _HowItWorksSection(key: comoFuncionaKey),
-            _Footer(),
+            const LandingFooter(),
           ],
         ),
       ),
@@ -677,52 +678,3 @@ class _HowItWorksStep extends StatelessWidget {
     );
   }
 }
-
-class _Footer extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: HomePage.dark,
-      padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 40),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('🍽️', style: TextStyle(fontSize: 32)),
-              const SizedBox(width: 12),
-              Text(
-                'EasyEat',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
-                    ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 40),
-          const Wrap(
-            spacing: 30,
-            runSpacing: 20,
-            children: [
-              Text('Privacidad', style: TextStyle(color: Color(0xFF94A3B8))),
-              Text('Términos', style: TextStyle(color: Color(0xFF94A3B8))),
-              Text('Contacto', style: TextStyle(color: Color(0xFF94A3B8))),
-              Text('Soporte', style: TextStyle(color: Color(0xFF94A3B8))),
-            ],
-          ),
-          const SizedBox(height: 60),
-          const Divider(color: Color(0xFF1E293B)),
-          const SizedBox(height: 40),
-          const Text(
-            '© 2024 EasyEat. Todos los derechos reservados. Diseñado para el éxito gastronómico.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
-          ),
-        ],
-      ),
-    );
-  }
-}
-

@@ -7,6 +7,7 @@ import 'utils/styles.dart';
 import 'screens/_auth/landing_screen.dart';
 import 'screens/_auth/login_screen.dart';
 import 'screens/_auth/register_screen.dart';
+import 'screens/_auth/legal_notice_screen.dart';
 import 'screens/app_entry_point.dart';
 import 'screens/_employee/add_visit_screen.dart';
 import 'screens/_employee/visit_confirmation_screen.dart';
@@ -41,6 +42,7 @@ class EventManagerApp extends StatelessWidget {
         '/dashboard': (context) => const DashboardRouterScreen(),
         '/add-visit': (context) => const AddVisitScreen(),
         '/visit-confirmation': (context) => const VisitConfirmationScreen(),
+        '/aviso-legal': (context) => const LegalNoticePage(),
       },
     );
   }
