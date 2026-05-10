@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 import '../../models/pointsWallet.dart';
 import '../../providers/auth_provider.dart';
@@ -75,7 +76,7 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = 'You need to be logged in as a customer to view your points wallet.';
+        _errorMessage = 'wallet.not_logged_in'.tr();
       });
       return;
     }
@@ -136,7 +137,7 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
   }
 
   String _formatDate(DateTime? value) {
-    if (value == null) return 'No date';
+    if (value == null) return 'N/A';
     final local = value.toLocal();
     final y = local.year.toString().padLeft(4, '0');
     final m = local.month.toString().padLeft(2, '0');
@@ -156,9 +157,9 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
-          'My Points Wallet',
-          style: TextStyle(
+        title: Text(
+          'wallet.title'.tr(),
+          style: const TextStyle(
             fontWeight: FontWeight.w900,
             color: Color(0xFF0F172A),
           ),
@@ -167,7 +168,7 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
           IconButton(
             onPressed: _loadWallet,
             icon: const Icon(Icons.refresh, color: Color(0xFF0F172A)),
-            tooltip: 'Refresh',
+            tooltip: 'wallet.refresh'.tr(),
           ),
         ],
       ),
@@ -198,9 +199,9 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
           const SizedBox(height: 48),
           _StateCard(
             icon: Icons.error_outline_rounded,
-            title: 'Couldn’t load points wallet',
+            title: 'wallet.error_title'.tr(),
             subtitle: _errorMessage!,
-            buttonLabel: 'Try again',
+            buttonLabel: 'wallet.try_again'.tr(),
             onPressed: _loadWallet,
             color: const Color(0xFFDC2626),
           ),
@@ -216,9 +217,9 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
           const SizedBox(height: 48),
           _StateCard(
             icon: Icons.wallet_giftcard_rounded,
-            title: 'No points yet',
-            subtitle: 'Your wallet will appear here once you start earning points from visits.',
-            buttonLabel: 'Refresh',
+            title: 'wallet.no_points_title'.tr(),
+            subtitle: 'wallet.no_points_subtitle'.tr(),
+            buttonLabel: 'wallet.refresh'.tr(),
             onPressed: _loadWallet,
             color: const Color(0xFFFF7A1A),
           ),
@@ -237,9 +238,9 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
           lastUpdate: _lastUpdate,
         ),
         const SizedBox(height: 20),
-        const Text(
-          'Wallet entries',
-          style: TextStyle(
+        Text(
+          'wallet.entries_title'.tr(),
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w900,
             color: Color(0xFF0F172A),
@@ -260,7 +261,7 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        const _InfoBanner(),
+        _InfoBanner(),
       ],
     );
   }
@@ -306,7 +307,7 @@ class _SummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Hello, $customerName',
+            'wallet.hello'.tr(args: [customerName]),
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 14,
@@ -314,9 +315,9 @@ class _SummaryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Your points balance',
-            style: TextStyle(
+          Text(
+            'wallet.balance_label'.tr(),
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -338,13 +339,13 @@ class _SummaryCard extends StatelessWidget {
               _MiniStat(
                 icon: Icons.account_balance_wallet_outlined,
                 value: '$walletCount',
-                label: 'Wallet records',
+                label: 'wallet.records_label'.tr(),
               ),
               const SizedBox(width: 12),
               _MiniStat(
                 icon: Icons.update_outlined,
                 value: lastUpdate == null ? '—' : _formatDateShort(lastUpdate!),
-                label: 'Last update',
+                label: 'wallet.last_update_label'.tr(),
               ),
             ],
           ),
@@ -492,7 +493,7 @@ class _WalletTile extends StatelessWidget {
                   ],
                   const SizedBox(height: 2),
                   Text(
-                    'Updated: $dateLabel',
+                    'wallet.updated_at'.tr(args: [dateLabel]),
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF94A3B8),
@@ -500,7 +501,7 @@ class _WalletTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Wallet ID: ${_shortId(wallet.id)}',
+                    'wallet.wallet_id'.tr(args: [_shortId(wallet.id)]),
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF94A3B8),
@@ -520,9 +521,9 @@ class _WalletTile extends StatelessWidget {
                     color: Color(0xFF16A34A),
                   ),
                 ),
-                const Text(
-                  'points',
-                  style: TextStyle(
+                Text(
+                  'wallet.points_unit'.tr(),
+                  style: const TextStyle(
                     fontSize: 12,
                     color: Color(0xFF64748B),
                     fontWeight: FontWeight.w500,
@@ -619,7 +620,7 @@ class _StateCard extends StatelessWidget {
 }
 
 class _InfoBanner extends StatelessWidget {
-  const _InfoBanner();
+  _InfoBanner();
 
   @override
   Widget build(BuildContext context) {
@@ -630,15 +631,15 @@ class _InfoBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFFFD8B0)),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.info_outline, color: Color(0xFFFF7A1A)),
           SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Points are updated when a visit is added or a reward is redeemed. Pull down to refresh the latest balance.',
-              style: TextStyle(
+              'wallet.info_banner'.tr(),
+              style: const TextStyle(
                 color: Color(0xFF9A3412),
                 fontSize: 13,
                 height: 1.4,

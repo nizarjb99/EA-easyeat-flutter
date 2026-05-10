@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../providers/auth_provider.dart';
 import '../_employee/home_employee_screen.dart';
 import 'discover_screen.dart';
@@ -17,21 +18,6 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
 
-  // Screens for employees
-  final List<Widget> _employeeScreens = [
-    const HomeEmployeeScreen(),
-    const DiscoverScreen(), // Placeholder for now
-    const ProfileScreen(),
-  ];
-
-  // Screens for customers
-  final List<Widget> _customerScreens = [
-    const HomeCustomerScreen(), // Home for customers
-    const DiscoverScreen(),
-    const PointsWalletScreen(),
-    const ProfileScreen(),
-  ];
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -44,34 +30,50 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final bool isEmployee = authProvider.isEmployee;
     final bool isStaff = authProvider.isStaff;
 
+    final localeKey = Key(context.locale.toString());
+
+    // We define screens inside build so they recreate and pick up locale changes
+    final List<Widget> employeeScreens = [
+      HomeEmployeeScreen(key: localeKey),
+      DiscoverScreen(key: localeKey),
+      ProfileScreen(key: localeKey),
+    ];
+
+    final List<Widget> customerScreens = [
+      HomeCustomerScreen(key: localeKey),
+      DiscoverScreen(key: localeKey),
+      PointsWalletScreen(key: localeKey),
+      ProfileScreen(key: localeKey),
+    ];
+
     if (isStaff) {
-      return const ProfileScreen();
+      return ProfileScreen(key: localeKey);
     }
 
     final List<BottomNavigationBarItem> employeeNavItems = [
-      const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-      const BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Discover'),
-      const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+      BottomNavigationBarItem(icon: const Icon(Icons.home), label: 'sidebar.home'.tr()),
+      BottomNavigationBarItem(icon: const Icon(Icons.explore), label: 'sidebar.discover'.tr()),
+      BottomNavigationBarItem(icon: const Icon(Icons.person), label: 'sidebar.profile'.tr()),
     ];
 
     final List<BottomNavigationBarItem> customerNavItems = [
-      const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'), // Changed to Home
-      const BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Discover'),
-      const BottomNavigationBarItem(icon: Icon(Icons.wallet_giftcard), label: 'Points'),
-      const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+      BottomNavigationBarItem(icon: const Icon(Icons.home), label: 'sidebar.home'.tr()),
+      BottomNavigationBarItem(icon: const Icon(Icons.explore), label: 'sidebar.discover'.tr()),
+      BottomNavigationBarItem(icon: const Icon(Icons.wallet_giftcard), label: 'sidebar.points'.tr()),
+      BottomNavigationBarItem(icon: const Icon(Icons.person), label: 'sidebar.profile'.tr()),
     ];
 
     return Scaffold(
       body: isEmployee
-          ? _employeeScreens[_selectedIndex]
-          : _customerScreens[_selectedIndex],
+          ? employeeScreens[_selectedIndex]
+          : customerScreens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: isEmployee ? employeeNavItems : customerNavItems,
         currentIndex: _selectedIndex,
         selectedItemColor: Theme.of(context).primaryColor,
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed, // Ensures all labels are visible
+        type: BottomNavigationBarType.fixed,
       ),
     );
   }

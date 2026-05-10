@@ -1,0 +1,88 @@
+{
+  "dashboard": {
+    "overview": "Resumen",
+    "points": "Puntos",
+    "roles": {
+      "customer": "Cliente",
+      "staff": "Personal",
+      "owner": "Propietario",
+      "user_fallback": "Usuario"
+    },
+    "logout": "Cerrar sesión",
+    "customers_served": "Clientes atendidos",
+    "revenue_generated": "Ingresos generados",
+    "reward_approvals": "Canjes aprobados",
+    "visits_handled": "Visitas gestionadas",
+    "points_available": "Puntos disponibles",
+    "visits": "Visitas",
+    "avg_rating": "Calificación promedio",
+    "favorite_restaurants": "Restaurantes favoritos",
+    "welcome_back": "Bienvenido de vuelta,",
+    "discover_flavors": "Descubre sabores que te esperan hoy"
+  },
+  "home": {
+    "quick_actions": "Acciones rápidas",
+    "activity_feed": "Actividad en vivo",
+    "alerts": "Alertas e información",
+    "redeem_reward": "Canjear recompensa",
+    "scan_approve": "Escanear y aprobar canje",
+    "add_visit": "Añadir visita y asignar puntos",
+    "scan_assign": "Escanear cliente para asignar puntos",
+    "settings": "Ajustes",
+    "restaurant_config": "Configuración del restaurante",
+    "no_activity": "Sin actividad reciente",
+    "earned_points": "{} ha ganado {} puntos",
+    "fewer_visits": "Menos visitas de lo habitual hoy.",
+    "managing": "Gestionando",
+    "tu_restaurante": "Tu restaurante"
+  },
+  "discover": {
+    "title": "Descubrir",
+    "search_placeholder": "Buscar restaurantes...",
+    "all_cities": "Todas las ciudades",
+    "all_categories": "Todas las categorías",
+    "no_results": "Ningún restaurante coincide con tu búsqueda.",
+    "open_map": "Abrir mapa",
+    "search_by_name": "Buscar por nombre de restaurante..."
+  },
+  "profile": {
+    "title": "Mi Perfil",
+    "name": "Nombre",
+    "email": "Correo electrónico",
+    "restaurant": "Restaurante",
+    "not_assigned": "No asignado",
+    "error_session": "Error: Sesión de usuario no encontrada o no iniciada"
+  },
+  "sidebar": {
+    "home": "Inicio",
+    "discover": "Descubrir",
+    "profile": "Perfil",
+    "points": "Puntos"
+  },
+  "customer": {
+    "search_hint": "Buscar restaurantes o ciudades...",
+    "recommended": "Restaurantes recomendados",
+    "no_restaurants": "Todavía no hay restaurantes cargados",
+    "connect_endpoint": "El login de customer ya está separado. El siguiente paso es conectar esta lista al endpoint /restaurants.",
+    "show_qr": "Mostrar mi QR",
+    "qr_sublabel": "Úsalo para ganar o canjear puntos en el restaurante"
+  },
+  "wallet": {
+    "title": "Mi Cartera de Puntos",
+    "refresh": "Actualizar",
+    "error_title": "No se pudo cargar la cartera de puntos",
+    "try_again": "Reintentar",
+    "no_points_title": "Sin puntos todavía",
+    "no_points_subtitle": "Tu cartera aparecerá aquí cuando empieces a ganar puntos con tus visitas.",
+    "entries_title": "Entradas de la cartera",
+    "hello": "Hola, {}",
+    "balance_label": "Tu saldo de puntos",
+    "records_label": "Registros",
+    "last_update_label": "Última actualización",
+    "updated_at": "Actualizado: {}",
+    "wallet_id": "ID de Cartera: {}",
+    "points_unit": "puntos",
+    "info_banner": "Los puntos se actualizan cuando se añade una visita o se canjea una recompensa. Desliza hacia abajo para actualizar el saldo.",
+    "not_logged_in": "Debes iniciar sesión como cliente para ver tu cartera de puntos."
+  }
+}

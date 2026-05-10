@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'qr_code_screen.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../services/customer_service.dart';
 import '../../models/customerStats.dart';
+import '../../widgets/language_dropdown_widget.dart';
 
 // ─── Color Palette ──────────────────────────────────────────────────────────
 const Color _orange = Color(0xFFFF7A1A);
@@ -74,34 +76,41 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Row(
-          children: [
-            Text('🍽️', style: TextStyle(fontSize: 24)),
-            SizedBox(width: 8),
-            Text(
-              'EasyEat',
-              style: TextStyle(color: _dark, fontWeight: FontWeight.w900),
-            ),
-          ],
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🍽️', style: TextStyle(fontSize: 24)),
+              const SizedBox(width: 8),
+              Text(
+                'EasyEat',
+                style: TextStyle(color: _dark, fontWeight: FontWeight.w900),
+              ),
+            ],
+          ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Center(
-              child: Text(
-                auth.displayName.split(' ').first,
-                style: const TextStyle(color: _dark, fontWeight: FontWeight.w700),
+          LanguageDropdownWidget(),
+          if (MediaQuery.of(context).size.width >= 600)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Center(
+                child: Text(
+                  auth.displayName.split(' ').first,
+                  style: const TextStyle(color: _dark, fontWeight: FontWeight.w700),
+                ),
               ),
             ),
-          ),
           IconButton(
-            tooltip: 'Cerrar sesión',
+            tooltip: 'dashboard.logout'.tr(),
             onPressed: () {
               auth.logout();
               Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
             },
             icon: const Icon(Icons.logout, color: _dark),
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: SingleChildScrollView(
@@ -120,7 +129,7 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
                     value: stats != null
                         ? stats.currentPointsBalance.toString()
                         : (_isStatsLoading ? '…' : '0'),
-                    label: 'Puntos disponibles',
+                    label: 'dashboard.points_available'.tr(),
                     color: _orange,
                   ),
                   _StatCard(
@@ -128,7 +137,7 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
                     value: stats != null
                         ? stats.totalVisits.toString()
                         : (_isStatsLoading ? '…' : '0'),
-                    label: 'Visitas',
+                    label: 'dashboard.visits'.tr(),
                     color: _green,
                   ),
                   _StatCard(
@@ -136,7 +145,7 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
                     value: stats != null
                         ? stats.averageReviewRating.toStringAsFixed(1)
                         : (_isStatsLoading ? '…' : '-'),
-                    label: 'Calificación promedio',
+                    label: 'dashboard.avg_rating'.tr(),
                     color: _orange,
                   ),
                   _StatCard(
@@ -144,7 +153,7 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
                     value: stats != null
                         ? stats.favoriteRestaurants.toString()
                         : (_isStatsLoading ? '…' : '0'),
-                    label: 'Restaurantes favoritos',
+                    label: 'dashboard.favorite_restaurants'.tr(),
                     color: _green,
                   ),
                 ];
@@ -176,7 +185,7 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
             const SizedBox(height: 28),
             TextField(
               decoration: InputDecoration(
-                hintText: 'Buscar restaurantes o ciudades…',
+                hintText: 'customer.search_hint'.tr(),
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 fillColor: Colors.white,
@@ -187,15 +196,15 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            const Text(
-              'Restaurantes recomendados',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: _dark),
+            Text(
+              'customer.recommended'.tr(),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: _dark),
             ),
             const SizedBox(height: 16),
-            const _EmptyCard(
+            _EmptyCard(
               icon: Icons.restaurant,
-              title: 'Todavía no hay restaurantes cargados',
-              subtitle: 'El login de customer ya está separado. El siguiente paso es conectar esta lista al endpoint /restaurants.',
+              title: 'customer.no_restaurants'.tr(),
+              subtitle: 'customer.connect_endpoint'.tr(),
             ),
           ],
         ),
@@ -221,11 +230,11 @@ class _WelcomeCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Bienvenido de vuelta,', style: TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.w600)),
+          Text('dashboard.welcome_back'.tr(), style: const TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           Text('$firstName 👋', style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.w900)),
           const SizedBox(height: 8),
-          const Text('Descubre sabores que te esperan hoy', style: TextStyle(color: Colors.white, fontSize: 16)),
+          Text('dashboard.discover_flavors'.tr(), style: const TextStyle(color: Colors.white, fontSize: 16)),
         ],
       ),
     );
@@ -243,7 +252,7 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 125,
+      constraints: const BoxConstraints(minHeight: 125),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -255,8 +264,16 @@ class _StatCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Icon(icon, color: color, size: 28),
-          Text(value, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: _dark)),
-          Text(label, style: const TextStyle(color: _grey, fontWeight: FontWeight.w600)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: _dark),
+          ),
+          Text(
+            label,
+            style: const TextStyle(color: _grey, fontWeight: FontWeight.w600, fontSize: 12),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
@@ -270,8 +287,8 @@ class _QuickActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return _ActionButton(
       icon: Icons.qr_code_2_rounded,
-      label: 'Show my QR',
-      sublabel: 'Use it to earn or redeem points at the restaurant',
+      label: 'customer.show_qr'.tr(),
+      sublabel: 'customer.qr_sublabel'.tr(),
       color: _orange,
       onTap: () {
         Navigator.push(

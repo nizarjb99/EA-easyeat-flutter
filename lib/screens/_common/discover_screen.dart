@@ -5,6 +5,8 @@ import 'package:ea_easyeat_flutter/screens/_common/restaurant_card.dart';
 import 'package:ea_easyeat_flutter/services/restaurant_service.dart';
 import 'package:ea_easyeat_flutter/screens/_common/restaurant_detail_screen.dart';
 import 'package:ea_easyeat_flutter/screens/_common/map_screen.dart';
+import 'package:easy_localization/easy_localization.dart';
+import '../../widgets/language_dropdown_widget.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
@@ -86,12 +88,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Discover'),
+        title: Text('discover.title'.tr()),
         centerTitle: true,
         actions: [
+          LanguageDropdownWidget(),
           IconButton(
             icon: const Icon(Icons.map),
-            tooltip: 'Open map',
+            tooltip: 'discover.open_map'.tr(),
             onPressed: () {
               Navigator.push(
                 context,
@@ -118,7 +121,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           _filterRestaurants();
                         },
                         decoration: InputDecoration(
-                          hintText: 'Search by restaurant name...',
+                          hintText: 'discover.search_by_name'.tr(),
                           prefixIcon: const Icon(Icons.search),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8.0),
@@ -136,15 +139,15 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             // City Filter
                             DropdownButton<String?>(
                               value: _selectedCity,
-                              hint: const Text('All Cities'),
+                              hint: Text('discover.all_cities'.tr()),
                               onChanged: (value) {
                                 setState(() => _selectedCity = value);
                                 _filterRestaurants();
                               },
                               items: [
-                                const DropdownMenuItem(
+                                DropdownMenuItem(
                                   value: null,
-                                  child: Text('All Cities'),
+                                  child: Text('discover.all_cities'.tr()),
                                 ),
                                 ..._availableCities.map((city) =>
                                     DropdownMenuItem(
@@ -153,19 +156,19 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                     )),
                               ],
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 16),
                             // Category Filter
                             DropdownButton<String?>(
                               value: _selectedCategory,
-                              hint: const Text('All Categories'),
+                              hint: Text('discover.all_categories'.tr()),
                               onChanged: (value) {
                                 setState(() => _selectedCategory = value);
                                 _filterRestaurants();
                               },
                               items: [
-                                const DropdownMenuItem(
+                                DropdownMenuItem(
                                   value: null,
-                                  child: Text('All Categories'),
+                                  child: Text('discover.all_categories'.tr()),
                                 ),
                                 ..._availableCategories.map((category) =>
                                     DropdownMenuItem(
@@ -181,8 +184,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     // Results ListView
                     Expanded(
                       child: _filteredRestaurants.isEmpty
-                          ? const Center(
-                              child: Text('No restaurants match your search.'))
+                          ? Center(
+                              child: Text('discover.no_results'.tr()))
                           : ListView.builder(
                               padding: const EdgeInsets.all(16.0),
                               itemCount: _filteredRestaurants.length,
@@ -211,4 +214,4 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 ),
     );
   }
-}
+}
