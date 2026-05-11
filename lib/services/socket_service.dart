@@ -3,9 +3,10 @@
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import '../models/chat_message.dart';
+import '../utils/constants.dart';
 
 class SocketService {
-  static const String _socketUrl = 'http://localhost:3000';
+  static const String _socketUrl = AppConstants.baseUrl;
 
   io.Socket? _socket;
 

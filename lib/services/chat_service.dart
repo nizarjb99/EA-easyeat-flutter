@@ -3,11 +3,11 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-
+import '../utils/constants.dart';
 import '../models/chat_message.dart';
 
 class ChatService {
-  static const String _baseUrl = 'http://localhost:3000';
+  static const String _baseUrl = AppConstants.baseUrl;
 
   Map<String, String> _headers({String? accessToken}) {
     return {
