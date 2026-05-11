@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
@@ -9,12 +10,8 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyAsDVp1_tlH1ePKsNsxKSW5h6cGf76PHbg" />
-
-        <service
-                android:name="com.google.android.gms.location.FusedLocationProviderClient"
-                android:enabled="true"
-                android:exported="false" />
+            android:value="AIzaSyAd9FCozX59rrNaNwd_tJf_NYr-pf1Jwds"/>
+<!--            android:value="AIzaSyAsDVp1_tlH1ePKsNsxKSW5h6cGf76PHbg" />-->
 
         <activity
             android:name=".MainActivity"
