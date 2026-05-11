@@ -6,11 +6,9 @@ import 'package:provider/provider.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import '../../providers/auth_provider.dart';
+import '../../utils/constants.dart';
 
-const String _apiBaseUrl = String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'http://localhost:1337',
-);
+const String _apiBaseUrl = AppConstants.baseUrl;
 
 class PopupChatScreen extends StatefulWidget {
   final String? restaurantId;
@@ -616,7 +614,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.08),
+                  color: Colors.red.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Text(
@@ -710,7 +708,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),
@@ -793,7 +791,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
