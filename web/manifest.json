@@ -1,6 +1,6 @@
 {
-    "name": "ea_flutter",
-    "short_name": "ea_flutter",
+    "name": "ea_easyeat_flutter",
+    "short_name": "ea_easyeat_flutter",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

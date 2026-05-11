@@ -1,8 +1,21 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
     <application
-        android:label="ea_flutter"
+        android:label="ea_easyeat_flutter"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyAsDVp1_tlH1ePKsNsxKSW5h6cGf76PHbg" />
+
+        <service
+                android:name="com.google.android.gms.location.FusedLocationProviderClient"
+                android:enabled="true"
+                android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

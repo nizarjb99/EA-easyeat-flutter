@@ -1,1 +1,1 @@
-# EA-SEMINARIO-FLUTTER
+# EA-easyeat-flutter
