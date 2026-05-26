@@ -17,11 +17,11 @@ class MiniRestaurantMap extends StatefulWidget {
 }
 
 class _MiniRestaurantMapState extends State<MiniRestaurantMap> {
-  late GoogleMapController _controller;
+  GoogleMapController? _controller;
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 

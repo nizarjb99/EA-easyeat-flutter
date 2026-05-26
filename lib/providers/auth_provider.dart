@@ -3,12 +3,16 @@ import 'package:flutter/material.dart';
 import '../models/customer.dart';
 import '../models/employee.dart';
 import '../services/auth_service.dart';
+import '../services/customer_service.dart';
+import '../services/employee_service.dart';
 import '../services/restaurant_service.dart';
 
 enum AuthAccountType { none, customer, employee }
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
+  final CustomerService _customerService = CustomerService();
+  final EmployeeService _employeeService = EmployeeService();
 
   Customer? _currentCustomer;
   Employee? _currentEmployee;
@@ -107,8 +111,11 @@ class AuthProvider extends ChangeNotifier {
         final dynamic maybeUser = rawEmployee ?? rawUser;
         if (maybeUser is Map<String, dynamic>) {
           final empRest = maybeUser['restaurant'] ?? maybeUser['restaurant_id'] ?? maybeUser['restaurantId'];
-          if (empRest is Map<String, dynamic>) normalizedRestaurant = empRest;
-          else if (empRest is String) normalizedRestaurant = {'id': empRest};
+          if (empRest is Map<String, dynamic>) {
+            normalizedRestaurant = empRest;
+          } else if (empRest is String) {
+            normalizedRestaurant = {'id': empRest};
+          }
         }
       }
 
@@ -206,6 +213,57 @@ class AuthProvider extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> updateProfile({
+    required String name,
+    required String email,
+    String? phone,
+  }) async {
+    if (!isLoggedIn || id == null || _accessToken == null || _accessToken!.isEmpty) {
+      throw Exception('User session not found');
+    }
+
+    _isLoading = true;
+    _errorMessage = '';
+    notifyListeners();
+
+    try {
+      if (isCustomer && _currentCustomer != null) {
+        final updatedCustomer = await _customerService.updateCustomer(
+          id!,
+          <String, dynamic>{
+            'name': name.trim(),
+            'email': email.trim(),
+          },
+          _accessToken!,
+        );
+        _currentCustomer = updatedCustomer;
+      } else if (isEmployee && _currentEmployee != null) {
+        final updatedEmployee = await _employeeService.updateEmployee(
+          id!,
+          <String, dynamic>{
+            'profile': <String, dynamic>{
+              'name': name.trim(),
+              'email': email.trim(),
+              if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
+            },
+          },
+          accessToken: _accessToken,
+        );
+        _currentEmployee = updatedEmployee;
+      } else {
+        throw Exception('Unsupported account type');
+      }
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      rethrow;
     }
   }
 }

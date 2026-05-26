@@ -8,6 +8,14 @@ import '../models/customerStats.dart';
 class CustomerService {
   final String baseUrl = '${AppConstants.baseUrl}/customers';
 
+  dynamic _decodeBody(http.Response response) {
+    final dynamic body = json.decode(response.body);
+    if (body is Map<String, dynamic> && body['data'] != null) {
+      return body['data'];
+    }
+    return body;
+  }
+
   Future<Map<String, String>> _headers(String? token) async {
     return {
       'Content-Type': 'application/json',
@@ -50,7 +58,8 @@ class CustomerService {
     );
 
     if (response.statusCode == 200) {
-      return Customer.fromJson(json.decode(response.body));
+      final decoded = _decodeBody(response);
+      return Customer.fromJson(decoded as Map<String, dynamic>);
     } else {
       throw Exception(json.decode(response.body)['message'] ?? 'Failed to update customer');
     }

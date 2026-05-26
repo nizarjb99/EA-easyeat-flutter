@@ -49,9 +49,21 @@
     "title": "Mi Perfil",
     "name": "Nombre",
     "email": "Correo electrónico",
+    "phone": "Teléfono",
     "restaurant": "Restaurante",
     "not_assigned": "No asignado",
-    "error_session": "Error: Sesión de usuario no encontrada o no iniciada"
+    "error_session": "Error: Sesión de usuario no encontrada o no iniciada",
+    "edit_profile": "Editar perfil",
+    "edit_profile_customer": "Actualiza los datos de tu cuenta.",
+    "edit_profile_employee": "Actualiza los datos de tu cuenta y contacto.",
+    "cancel": "Cancelar",
+    "save": "Guardar cambios",
+    "validation_name": "Introduce tu nombre.",
+    "validation_email": "Introduce tu correo electrónico.",
+    "validation_email_invalid": "Introduce una dirección de correo válida.",
+    "validation_phone": "Introduce tu número de teléfono.",
+    "edit_success": "Perfil actualizado correctamente.",
+    "edit_error": "No se pudo actualizar el perfil: {}"
   },
   "sidebar": {
     "home": "Inicio",
