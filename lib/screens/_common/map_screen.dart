@@ -16,7 +16,7 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  late GoogleMapController _mapController;
+  GoogleMapController? _mapController;
   Set<Marker> _markers = {};
   bool _showNearby = false;
 
@@ -229,8 +229,8 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _animateToUserLocation(LocationProvider locationProvider) {
-    if (locationProvider.currentPosition != null) {
-      _mapController.animateCamera(
+    if (locationProvider.currentPosition != null && _mapController != null) {
+      _mapController!.animateCamera(
         CameraUpdate.newLatLng(
           LatLng(
             locationProvider.currentPosition!.latitude,
@@ -300,7 +300,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void dispose() {
     // map controller is initialized on onMapCreated; keep same dispose as before.
-    _mapController.dispose();
+    _mapController?.dispose();
     super.dispose();
   }
 }

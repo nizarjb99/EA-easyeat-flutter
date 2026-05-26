@@ -49,9 +49,21 @@
     "title": "My Profile",
     "name": "Name",
     "email": "Email",
+    "phone": "Phone",
     "restaurant": "Restaurant",
     "not_assigned": "Not assigned",
-    "error_session": "Error: User session not found or not logged in"
+    "error_session": "Error: User session not found or not logged in",
+    "edit_profile": "Edit profile",
+    "edit_profile_customer": "Update your account details.",
+    "edit_profile_employee": "Update your account and contact details.",
+    "cancel": "Cancel",
+    "save": "Save changes",
+    "validation_name": "Please enter your name.",
+    "validation_email": "Please enter your email.",
+    "validation_email_invalid": "Please enter a valid email address.",
+    "validation_phone": "Please enter your phone number.",
+    "edit_success": "Profile updated successfully.",
+    "edit_error": "Could not update profile: {}"
   },
   "sidebar": {
     "home": "Home",

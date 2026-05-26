@@ -49,9 +49,21 @@
     "title": "El meu Perfil",
     "name": "Nom",
     "email": "Correu electrònic",
+    "phone": "Telèfon",
     "restaurant": "Restaurant",
     "not_assigned": "No assignat",
-    "error_session": "Error: Sessió d'usuari no trobada o no iniciada"
+    "error_session": "Error: Sessió d'usuari no trobada o no iniciada",
+    "edit_profile": "Editar perfil",
+    "edit_profile_customer": "Actualitza les dades del teu compte.",
+    "edit_profile_employee": "Actualitza les dades del teu compte i de contacte.",
+    "cancel": "Cancel·lar",
+    "save": "Desar canvis",
+    "validation_name": "Introdueix el teu nom.",
+    "validation_email": "Introdueix el teu correu electrònic.",
+    "validation_email_invalid": "Introdueix una adreça de correu vàlida.",
+    "validation_phone": "Introdueix el teu número de telèfon.",
+    "edit_success": "Perfil actualitzat correctament.",
+    "edit_error": "No s'ha pogut actualitzar el perfil: {}"
   },
   "sidebar": {
     "home": "Inici",
