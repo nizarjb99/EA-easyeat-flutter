@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/notification_provider.dart';
+import '../../services/fcm_service.dart';
+import '../../services/notification_router.dart';
 import '../_employee/home_employee_screen.dart';
 import 'discover_screen.dart';
 import 'profile_screen.dart';
@@ -18,6 +21,7 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
+  FcmService? _fcmService;
 
   final List<Widget> _employeeScreens = [
     const HomeEmployeeScreen(),
@@ -32,13 +36,59 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const ProfileScreen(),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotifications();
+  }
+
+  Future<void> _initializeNotifications() async {
+    final auth = context.read<AuthProvider>();
+    final notificationProvider = context.read<NotificationProvider>();
+
+    if (!auth.isLoggedIn || !auth.isCustomer) {
+      return;
+    }
+
+    _fcmService = FcmService();
+
+    await _fcmService!.initialize(
+      customerId: auth.id,
+      accessToken: auth.accessToken,
+      onNotificationTap: (payload) async {
+        if (!mounted) return;
+        await NotificationRouter.routeFromPayload(context, payload);
+      },
+      onForegroundNotification: (notification) {
+        notificationProvider.upsertForegroundNotification(notification);
+
+        // Mostrar snackbar quan es rep una notificació en foreground
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(notification.message),
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'Veure',
+                onPressed: () {
+                  Navigator.pushNamed(context, '/notifications');
+                },
+              ),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _fcmService?.dispose();
+    super.dispose();
+  }
+
   void _onItemTapped(int index, bool isEmployee) {
     if (isEmployee) {
-      // Employee:
-      // 0 -> Home
-      // 1 -> Discover
-      // 2 -> Xat popup
-      // 3 -> Profile
       if (index == 2) {
         _openChatPopup();
         return;
@@ -51,12 +101,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       return;
     }
 
-    // Customer:
-    // 0 -> Home
-    // 1 -> Discover
-    // 2 -> Points
-    // 3 -> Xat popup
-    // 4 -> Profile
     if (index == 3) {
       _openChatPopup();
       return;
@@ -102,7 +146,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     final localeKey = Key(context.locale.toString());
 
-    // We define screens inside build so they recreate and pick up locale changes
     final List<Widget> employeeScreens = [
       HomeEmployeeScreen(key: localeKey),
       DiscoverScreen(key: localeKey),
