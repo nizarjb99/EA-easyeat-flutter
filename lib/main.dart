@@ -45,9 +45,10 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => ChatProvider()),
           ChangeNotifierProvider(create: (_) => locationProvider),
           ChangeNotifierProxyProvider<AuthProvider, NotificationProvider>(
-            create: (_, auth, provider) {
-              provider!.bindAuth(auth);
-              return provider;
+            create: (_) => NotificationProvider(),
+            update: (_, auth, notificationProvider) {
+              notificationProvider!.bindAuth(auth);
+              return notificationProvider;
             },
           ),
         ],

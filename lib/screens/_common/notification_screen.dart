@@ -95,7 +95,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       ),
       body: Consumer<NotificationProvider>(
         builder: (context, provider, _) {
-          if (provider.isInitialLoading) {
+          if (provider.isLoading && provider.notifications.isEmpty) { // Modified this line
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

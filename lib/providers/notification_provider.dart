@@ -30,6 +30,7 @@ class NotificationProvider extends ChangeNotifier {
   int _currentPage = 1;
   int _pageSize = 20;
   int _unreadCount = 0;
+  bool _isInitialLoading = true; // Added this line
 
   List<NotificationModel> get notifications => List.unmodifiable(_notifications);
   bool get isLoading => _isLoading;
@@ -38,6 +39,7 @@ class NotificationProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   int get unreadCount => _unreadCount;
   bool get hasSession => _customerId != null && _customerId!.isNotEmpty && _accessToken != null && _accessToken!.isNotEmpty;
+  bool get isInitialLoading => _isInitialLoading; // Added this line
 
   void bindAuth(AuthProvider auth) {
     final signature = '${auth.accountType}:${auth.id}:${auth.accessToken}';
@@ -67,6 +69,7 @@ class NotificationProvider extends ChangeNotifier {
     _isLoadingMore = false;
     _unreadCount = 0;
     _errorMessage = null;
+    _isInitialLoading = true; // Reset for next session
     notifyListeners();
   }
 
@@ -97,6 +100,7 @@ class NotificationProvider extends ChangeNotifier {
 
       _hasMore = result.hasMore;
       _currentPage = 1;
+      _isInitialLoading = false; // Set to false after first successful load
 
       await _repository.saveCachedNotifications(_customerId!, _notifications);
       await refreshUnreadCount(silent: true);
@@ -112,6 +116,7 @@ class NotificationProvider extends ChangeNotifier {
           ..clear()
           ..addAll(_sortByNewest(cached));
         _hasMore = false;
+        _isInitialLoading = false; // Set to false even if loaded from cache
         await refreshUnreadCount(silent: true);
       }
     } finally {

@@ -125,7 +125,7 @@ class NotificationsApi {
     final uri = Uri.parse('$_baseUrl/$path?page=$page&limit=$limit');
 
     final response = await _sendWithRetry(
-      () => _client.get(uri, headers: await _headers(accessToken)),
+      () async => _client.get(uri, headers: await _headers(accessToken)),
     );
 
     if (response.statusCode == 401) {
@@ -167,7 +167,7 @@ class NotificationsApi {
     final uri = Uri.parse('$_baseUrl/customer/$customerId/count-unread');
 
     final response = await _sendWithRetry(
-      () => _client.get(uri, headers: await _headers(accessToken)),
+      () async => _client.get(uri, headers: await _headers(accessToken)),
     );
 
     if (response.statusCode == 401) {
@@ -199,7 +199,7 @@ class NotificationsApi {
     final uri = Uri.parse('$_baseUrl/$notificationId/read');
 
     final response = await _sendWithRetry(
-      () => _client.patch(uri, headers: await _headers(accessToken)),
+      () async => _client.patch(uri, headers: await _headers(accessToken)),
     );
 
     if (response.statusCode == 401) {
@@ -225,7 +225,7 @@ class NotificationsApi {
     final uri = Uri.parse('$_baseUrl/customer/$customerId/read-all');
 
     final response = await _sendWithRetry(
-      () => _client.patch(uri, headers: await _headers(accessToken)),
+      () async => _client.patch(uri, headers: await _headers(accessToken)),
     );
 
     if (response.statusCode == 401) {
