@@ -33,6 +33,12 @@ Future<void> main() async {
   final locationProvider = LocationProvider();
   await locationProvider.initialize();
 
+  // Restore saved session (if any) before building the widget tree.
+  // This ensures the user is auto-logged in and FCM is initialized
+  // without needing to go through the login screen again.
+  final authProvider = AuthProvider();
+  await authProvider.tryRestoreSession();
+
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('en'), Locale('es'), Locale('ca')],
@@ -40,7 +46,7 @@ Future<void> main() async {
       fallbackLocale: const Locale('en'),
       child: MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (_) => AuthProvider()),
+          ChangeNotifierProvider(create: (_) => authProvider),
           ChangeNotifierProvider(create: (_) => RestaurantProvider()),
           ChangeNotifierProvider(create: (_) => ChatProvider()),
           ChangeNotifierProvider(create: (_) => locationProvider),

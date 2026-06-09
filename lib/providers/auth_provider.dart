@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/customer.dart';
@@ -67,6 +68,96 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
+  /// Attempts to restore a previously saved session from SharedPreferences.
+  /// If the token has expired, tries to refresh it via /auth/refresh.
+  /// Returns `true` if the session was restored successfully.
+  Future<bool> tryRestoreSession() async {
+    try {
+      final savedToken = await _authService.getAccessToken();
+      final savedUserId = await _authService.getUserId();
+      final savedRole = await _authService.getUserRole();
+
+      if (savedToken == null ||
+          savedToken.isEmpty ||
+          savedUserId == null ||
+          savedUserId.isEmpty ||
+          savedRole == null ||
+          savedRole.isEmpty) {
+        return false;
+      }
+
+      _accessToken = savedToken;
+
+      // Try to fetch the user profile. If it fails (e.g. 401),
+      // attempt a token refresh and retry once.
+      try {
+        await _fetchUserProfile(savedUserId, savedRole, savedToken);
+      } catch (e) {
+        debugPrint('Profile fetch failed, attempting token refresh: $e');
+
+        final newToken = await _authService.refreshToken(savedToken);
+        if (newToken == null) {
+          // Refresh failed — session is truly expired.
+          debugPrint('Token refresh failed, clearing session.');
+          await _authService.logout();
+          _resetSessionState();
+          return false;
+        }
+
+        // Retry with the refreshed token.
+        _accessToken = newToken;
+        await _fetchUserProfile(savedUserId, savedRole, newToken);
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      // Final fallback — clear the stale session.
+      debugPrint('Session restore failed: $e');
+      await _authService.logout();
+      _resetSessionState();
+      return false;
+    }
+  }
+
+  /// Fetches the full user profile (and restaurant for employees) using the
+  /// given credentials. Throws on failure so callers can handle retry logic.
+  Future<void> _fetchUserProfile(String userId, String role, String token) async {
+    if (role == 'customer') {
+      _accountType = AuthAccountType.customer;
+      final rawUser = await _authService.fetchCustomerById(userId, token);
+      final data = rawUser['data'] ?? rawUser;
+      _currentCustomer = Customer.fromJson(data);
+    } else {
+      _accountType = AuthAccountType.employee;
+      final rawUser = await _authService.fetchEmployeeById(userId, token);
+      final data = rawUser['data'] ?? rawUser;
+      _currentEmployee = Employee.fromJson(data);
+
+      // Fetch full restaurant for employee, same as login().
+      if (_currentEmployee != null) {
+        try {
+          final restaurantService = RestaurantService();
+          final fullRestaurant = await restaurantService.fetchFullRestaurantById(
+            _currentEmployee!.restaurantId,
+            accessToken: _accessToken,
+          );
+          _restaurant = fullRestaurant;
+        } catch (e) {
+          debugPrint('Error fetching restaurant during session restore: $e');
+        }
+      }
+    }
+  }
+
+  void _resetSessionState() {
+    _currentCustomer = null;
+    _currentEmployee = null;
+    _restaurant = null;
+    _accessToken = null;
+    _accountType = AuthAccountType.none;
+  }
+
   void logout() {
     _currentCustomer = null;
     _currentEmployee = null;
@@ -74,6 +165,8 @@ class AuthProvider extends ChangeNotifier {
     _accessToken = null;
     _accountType = AuthAccountType.none;
     _errorMessage = '';
+    // Clear persisted session so auto-login won't trigger next time.
+    _authService.logout();
     notifyListeners();
   }
 
