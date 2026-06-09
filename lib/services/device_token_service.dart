@@ -70,7 +70,6 @@ class DeviceTokenApi {
           'customer_id': customerId,
           'token': token,
           'platform': platform,
-          'active': true,
         }),
       )
           .timeout(const Duration(seconds: 10));
@@ -114,7 +113,6 @@ class DeviceTokenApi {
         },
         body: json.encode(<String, dynamic>{
           'token': token,
-          'active': false,
         }),
       )
           .timeout(const Duration(seconds: 10));
