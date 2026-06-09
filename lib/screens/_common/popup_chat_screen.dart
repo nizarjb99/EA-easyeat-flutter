@@ -124,9 +124,19 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
   }
 
   void _connectSocket() {
+    final auth = context.read<AuthProvider>();
+    final token = auth.accessToken;
+
     _socket = io.io(
       _apiBaseUrl,
-      io.OptionBuilder().disableAutoConnect().build(),
+      io.OptionBuilder()
+          .setTransports(['websocket', 'polling'])
+          .disableAutoConnect()
+          .setAuth({
+            if (token != null && token.isNotEmpty)
+              'token': token,
+          })
+          .build(),
     );
 
     _socket!.onConnect((_) {
@@ -134,6 +144,12 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
 
       _safeSetState(() {
         _socketConnected = true;
+        // Clear socket-related errors once connected
+        if (_error != null &&
+            (_error!.startsWith('No s’ha pogut connectar') ||
+             _error!.startsWith('Error de socket:'))) {
+          _error = null;
+        }
       });
 
       if (_isEmployee) {
@@ -154,6 +170,13 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
         _socket?.emit('chat:joinConversation', {
           'conversationId': _selectedConversation!.id,
         });
+        if (!_isLoading) {
+          _loadConversationMessages(_selectedConversation!.id);
+        }
+      } else {
+        if (!_openedFromRestaurant && !_isLoading) {
+          _loadConversationsForCurrentUser();
+        }
       }
     });
 

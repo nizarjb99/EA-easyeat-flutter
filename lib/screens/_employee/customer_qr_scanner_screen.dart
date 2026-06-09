@@ -122,7 +122,7 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
           MobileScanner(
             controller: _controller,
             onDetect: _handleQrDetection,
-            errorBuilder: (context, error, child) {
+            errorBuilder: (context, error) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -152,11 +152,6 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
                     ),
                   ],
                 ),
-              );
-            },
-            placeholderBuilder: (context, child) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppColors.customer),
               );
             },
           ),

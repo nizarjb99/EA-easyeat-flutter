@@ -32,7 +32,7 @@ class LocalNotificationService {
     const iosSettings = DarwinInitializationSettings();
 
     await _plugin.initialize(
-      const InitializationSettings(
+      settings: InitializationSettings(
         android: androidSettings,
         iOS: iosSettings,
       ),
@@ -62,10 +62,10 @@ class LocalNotificationService {
     required Map<String, dynamic> payload,
   }) async {
     await _plugin.show(
-      id,
-      title,
-      body,
-      NotificationDetails(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           _channel.id,
           _channel.name,
