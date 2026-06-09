@@ -21,11 +21,11 @@ class DeviceTokenApi {
   // Accept an explicit override, otherwise use the constant.
         _registerEndpoint = registerEndpoint ??
             (AppConstants.baseUrl.isNotEmpty
-                ? '${AppConstants.baseUrl}/register'
+                ? '${AppConstants.baseUrl}/customerDeviceTokens/register'
                 : ''),
         _unregisterEndpoint = unregisterEndpoint ??
             (AppConstants.baseUrl.isNotEmpty
-                ? '${AppConstants.baseUrl}/unregister'
+                ? '${AppConstants.baseUrl}/customerDeviceTokens/unregister'
                 : '');
 
   final http.Client _client;
