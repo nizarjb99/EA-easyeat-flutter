@@ -48,7 +48,7 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
 
     await fcmService.initialize(
       customerId: auth.id,
-      accessToken: auth.accessToken,
+      getAccessToken: () => auth.accessToken,
       onNotificationTap: (payload) async {
         if (!mounted) return;
         await NotificationRouter.routeFromPayload(context, payload);
@@ -56,7 +56,6 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
       onForegroundNotification: (notification) {
         notificationProvider.upsertForegroundNotification(notification);
 
-        // Mostrar snackbar
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(notification.message),

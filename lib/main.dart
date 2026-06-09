@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +21,7 @@ import 'screens/_employee/add_visit_screen.dart';
 import 'screens/_employee/exchange_confirmation_screen.dart';
 import 'screens/_employee/exchange_reward_screen.dart';
 import 'screens/_employee/visit_confirmation_screen.dart';
+import 'services/fcm_service.dart' show firebaseMessagingBackgroundHandler;
 import 'utils/styles.dart';
 
 Future<void> main() async {
@@ -28,14 +30,19 @@ Future<void> main() async {
 
   if (!kIsWeb) {
     await Firebase.initializeApp();
+
+    // Must be registered before any other Firebase call and before runApp.
+    // The handler must be a top-level function annotated with
+    // @pragma('vm:entry-point') – see fcm_service.dart.
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   }
 
   final locationProvider = LocationProvider();
   await locationProvider.initialize();
 
   // Restore saved session (if any) before building the widget tree.
-  // This ensures the user is auto-logged in and FCM is initialized
-  // without needing to go through the login screen again.
+  // tryRestoreSession() also initialises FCM when it finds a valid customer
+  // session, so push notifications are ready before the first frame is drawn.
   final authProvider = AuthProvider();
   await authProvider.tryRestoreSession();
 
@@ -50,6 +57,7 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => RestaurantProvider()),
           ChangeNotifierProvider(create: (_) => ChatProvider()),
           ChangeNotifierProvider(create: (_) => locationProvider),
+
           ChangeNotifierProxyProvider<AuthProvider, NotificationProvider>(
             create: (_) => NotificationProvider(),
             update: (_, auth, notificationProvider) {
@@ -78,6 +86,7 @@ class EventManagerApp extends StatelessWidget {
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
+      // LandingScreen is the correct unauthenticated entry point.
       initialRoute: '/',
       routes: {
         '/': (context) => const HomePage(),

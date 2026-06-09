@@ -6,14 +6,19 @@ import '../models/employee.dart';
 import '../services/auth_service.dart';
 import '../services/customer_service.dart';
 import '../services/employee_service.dart';
+import '../services/fcm_service.dart';
 import '../services/restaurant_service.dart';
 
 enum AuthAccountType { none, customer, employee }
 
 class AuthProvider extends ChangeNotifier {
+  AuthProvider({FcmService? fcmService})
+      : _fcmService = fcmService ?? FcmService();
+
   final AuthService _authService = AuthService();
   final CustomerService _customerService = CustomerService();
   final EmployeeService _employeeService = EmployeeService();
+  final FcmService _fcmService;
 
   Customer? _currentCustomer;
   Employee? _currentEmployee;
@@ -24,6 +29,8 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   String _errorMessage = '';
 
+  // ── Getters ────────────────────────────────────────────────────────────────
+
   Customer? get currentCustomer => _currentCustomer;
   Employee? get currentEmployee => _currentEmployee;
   Map<String, dynamic>? get restaurant => _restaurant;
@@ -32,15 +39,18 @@ class AuthProvider extends ChangeNotifier {
   String? get token => _accessToken;
   AuthAccountType get accountType => _accountType;
 
-  bool get isLoggedIn => _accessToken != null && (_currentCustomer != null || _currentEmployee != null);
+  bool get isLoggedIn =>
+      _accessToken != null &&
+          (_currentCustomer != null || _currentEmployee != null);
+
   bool get isCustomer => _accountType == AuthAccountType.customer;
   bool get isEmployee => _accountType == AuthAccountType.employee;
   bool get isOwner => _currentEmployee?.role == 'owner';
   bool get isStaff => _currentEmployee?.role == 'staff';
 
   /// Final role used by the router:
-  /// - customer login returns 'customer'
-  /// - employee login returns employee.profile.role: 'owner' or 'staff'
+  /// - customer login → 'customer'
+  /// - employee login → employee.profile.role: 'owner' | 'staff'
   String? get role {
     if (isCustomer) return 'customer';
     if (isEmployee) return _currentEmployee?.role;
@@ -68,8 +78,13 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Session restore
+  // ──────────────────────────────────────────────────────────────────────────
+
   /// Attempts to restore a previously saved session from SharedPreferences.
   /// If the token has expired, tries to refresh it via /auth/refresh.
+  /// Initialises FCM if the session is restored successfully.
   /// Returns `true` if the session was restored successfully.
   Future<bool> tryRestoreSession() async {
     try {
@@ -97,22 +112,26 @@ class AuthProvider extends ChangeNotifier {
 
         final newToken = await _authService.refreshToken(savedToken);
         if (newToken == null) {
-          // Refresh failed — session is truly expired.
           debugPrint('Token refresh failed, clearing session.');
           await _authService.logout();
           _resetSessionState();
           return false;
         }
 
-        // Retry with the refreshed token.
         _accessToken = newToken;
         await _fetchUserProfile(savedUserId, savedRole, newToken);
       }
 
       notifyListeners();
+
+      // Initialise FCM now that we know who the user is.
+      // For employees we skip FCM (notifications are customer-only).
+      if (isCustomer) {
+        await _initFcm();
+      }
+
       return true;
     } catch (e) {
-      // Final fallback — clear the stale session.
       debugPrint('Session restore failed: $e');
       await _authService.logout();
       _resetSessionState();
@@ -120,57 +139,15 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Fetches the full user profile (and restaurant for employees) using the
-  /// given credentials. Throws on failure so callers can handle retry logic.
-  Future<void> _fetchUserProfile(String userId, String role, String token) async {
-    if (role == 'customer') {
-      _accountType = AuthAccountType.customer;
-      final rawUser = await _authService.fetchCustomerById(userId, token);
-      final data = rawUser['data'] ?? rawUser;
-      _currentCustomer = Customer.fromJson(data);
-    } else {
-      _accountType = AuthAccountType.employee;
-      final rawUser = await _authService.fetchEmployeeById(userId, token);
-      final data = rawUser['data'] ?? rawUser;
-      _currentEmployee = Employee.fromJson(data);
+  // ──────────────────────────────────────────────────────────────────────────
+  // Login
+  // ──────────────────────────────────────────────────────────────────────────
 
-      // Fetch full restaurant for employee, same as login().
-      if (_currentEmployee != null) {
-        try {
-          final restaurantService = RestaurantService();
-          final fullRestaurant = await restaurantService.fetchFullRestaurantById(
-            _currentEmployee!.restaurantId,
-            accessToken: _accessToken,
-          );
-          _restaurant = fullRestaurant;
-        } catch (e) {
-          debugPrint('Error fetching restaurant during session restore: $e');
-        }
-      }
-    }
-  }
-
-  void _resetSessionState() {
-    _currentCustomer = null;
-    _currentEmployee = null;
-    _restaurant = null;
-    _accessToken = null;
-    _accountType = AuthAccountType.none;
-  }
-
-  void logout() {
-    _currentCustomer = null;
-    _currentEmployee = null;
-    _restaurant = null;
-    _accessToken = null;
-    _accountType = AuthAccountType.none;
-    _errorMessage = '';
-    // Clear persisted session so auto-login won't trigger next time.
-    _authService.logout();
-    notifyListeners();
-  }
-
-  Future<bool> login(String email, String password, {String role = 'employee'}) async {
+  Future<bool> login(
+      String email,
+      String password, {
+        String role = 'employee',
+      }) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
@@ -200,10 +177,11 @@ class AuthProvider extends ChangeNotifier {
       } else if (rawRestaurant is String) {
         normalizedRestaurant = {'id': rawRestaurant};
       } else {
-        // maybe the restaurant is included inside employee/user object
         final dynamic maybeUser = rawEmployee ?? rawUser;
         if (maybeUser is Map<String, dynamic>) {
-          final empRest = maybeUser['restaurant'] ?? maybeUser['restaurant_id'] ?? maybeUser['restaurantId'];
+          final empRest = maybeUser['restaurant'] ??
+              maybeUser['restaurant_id'] ??
+              maybeUser['restaurantId'];
           if (empRest is Map<String, dynamic>) {
             normalizedRestaurant = empRest;
           } else if (empRest is String) {
@@ -217,18 +195,13 @@ class AuthProvider extends ChangeNotifier {
       if (rawCustomer is Map<String, dynamic>) {
         _accountType = AuthAccountType.customer;
         _currentCustomer = Customer.fromJson(rawCustomer);
-      }
-      else if (rawEmployee is Map<String, dynamic>) {
+      } else if (rawEmployee is Map<String, dynamic>) {
         _accountType = AuthAccountType.employee;
         _currentEmployee = Employee.fromJson(rawEmployee);
-      }
-      else if (rawAdmin is Map<String, dynamic>) {
-        // Optional compatibility if your backend ever returns admin.
+      } else if (rawAdmin is Map<String, dynamic>) {
         _accountType = AuthAccountType.employee;
         _currentEmployee = Employee.fromJson(rawAdmin);
-      }
-      else if (rawUser is Map<String, dynamic>) {
-        // Fallback for old backend responses.
+      } else if (rawUser is Map<String, dynamic>) {
         if (role == 'customer') {
           _accountType = AuthAccountType.customer;
           _currentCustomer = Customer.fromJson(rawUser);
@@ -237,17 +210,20 @@ class AuthProvider extends ChangeNotifier {
           _currentEmployee = Employee.fromJson(rawUser);
         }
       } else {
-        throw Exception('Unexpected server response: missing customer/employee data');
+        throw Exception(
+            'Unexpected server response: missing customer/employee data');
       }
 
       if (_accessToken == null || _accessToken!.isEmpty) {
         throw Exception('Unexpected server response: missing access token');
       }
 
+      // Fetch full restaurant details for employees.
       if (isEmployee && _currentEmployee != null) {
         try {
           final restaurantService = RestaurantService();
-          final fullRestaurant = await restaurantService.fetchFullRestaurantById(
+          final fullRestaurant =
+          await restaurantService.fetchFullRestaurantById(
             _currentEmployee!.restaurantId,
             accessToken: _accessToken,
           );
@@ -259,6 +235,14 @@ class AuthProvider extends ChangeNotifier {
 
       _isLoading = false;
       notifyListeners();
+
+      // Initialise FCM after a successful login.
+      // Only customers receive push notifications; employees use the app
+      // interactively and do not need a device token registered.
+      if (isCustomer) {
+        await _initFcm();
+      }
+
       return true;
     } catch (e) {
       _isLoading = false;
@@ -267,6 +251,10 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
   }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Sign-up
+  // ──────────────────────────────────────────────────────────────────────────
 
   Future<bool> signup(String name, String email, String password) async {
     _isLoading = true;
@@ -284,6 +272,26 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Logout
+  // ──────────────────────────────────────────────────────────────────────────
+
+  Future<void> logout() async {
+    // Dispose FCM first so the backend knows this device is no longer active
+    // and stops delivering notifications for the outgoing user.
+    await _fcmService.dispose(accessToken: _accessToken);
+
+    _resetSessionState();
+    _errorMessage = '';
+
+    await _authService.logout();
+    notifyListeners();
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Profile helpers
+  // ──────────────────────────────────────────────────────────────────────────
+
   Future<void> loadProfileFromApi() async {
     if (id == null || _accessToken == null || _accessToken!.isEmpty) return;
 
@@ -293,11 +301,13 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       if (isCustomer) {
-        final Map<String, dynamic> rawUser = await _authService.fetchCustomerById(id!, _accessToken!);
+        final Map<String, dynamic> rawUser =
+        await _authService.fetchCustomerById(id!, _accessToken!);
         final data = rawUser['data'] ?? rawUser;
         _currentCustomer = Customer.fromJson(data);
       } else if (isEmployee) {
-        final Map<String, dynamic> rawUser = await _authService.fetchEmployeeById(id!, _accessToken!);
+        final Map<String, dynamic> rawUser =
+        await _authService.fetchEmployeeById(id!, _accessToken!);
         final data = rawUser['data'] ?? rawUser;
         _currentEmployee = Employee.fromJson(data);
       }
@@ -340,7 +350,8 @@ class AuthProvider extends ChangeNotifier {
             'profile': <String, dynamic>{
               'name': name.trim(),
               'email': email.trim(),
-              if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
+              if (phone != null && phone.trim().isNotEmpty)
+                'phone': phone.trim(),
             },
           },
           accessToken: _accessToken,
@@ -358,5 +369,107 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Internal helpers
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /// Fetches the full user profile (and restaurant for employees).
+  /// Throws on failure so callers can handle retry logic.
+  Future<void> _fetchUserProfile(
+      String userId, String role, String token) async {
+    if (role == 'customer') {
+      _accountType = AuthAccountType.customer;
+      final rawUser = await _authService.fetchCustomerById(userId, token);
+      final data = rawUser['data'] ?? rawUser;
+      _currentCustomer = Customer.fromJson(data);
+    } else {
+      _accountType = AuthAccountType.employee;
+      final rawUser = await _authService.fetchEmployeeById(userId, token);
+      final data = rawUser['data'] ?? rawUser;
+      _currentEmployee = Employee.fromJson(data);
+
+      if (_currentEmployee != null) {
+        try {
+          final restaurantService = RestaurantService();
+          final fullRestaurant =
+          await restaurantService.fetchFullRestaurantById(
+            _currentEmployee!.restaurantId,
+            accessToken: _accessToken,
+          );
+          _restaurant = fullRestaurant;
+        } catch (e) {
+          debugPrint('Error fetching restaurant during session restore: $e');
+        }
+      }
+    }
+  }
+
+  /// Initialises FCM for the currently authenticated customer.
+  ///
+  /// Safe to call multiple times – [FcmService.initialize] is idempotent.
+  Future<void> _initFcm() async {
+    if (!isCustomer || id == null) return;
+
+    try {
+      await _fcmService.initialize(
+        customerId: id,
+        // Pass a getter callback so the token-refresh subscription always
+        // reads the latest access token, not a stale captured value.
+        getAccessToken: () => _accessToken,
+        onNotificationTap: (payload) async {
+          // Payload routing is handled by NotificationRouter in the UI layer.
+          // We publish the event via notifyListeners so widgets can react.
+          _lastNotificationPayload = payload;
+          notifyListeners();
+        },
+        onForegroundNotification: (notification) {
+          _lastForegroundNotification = notification;
+          notifyListeners();
+        },
+      );
+    } catch (e) {
+      debugPrint('[AuthProvider] FCM initialisation error: $e');
+      // Non-fatal – the app works without push notifications.
+    }
+  }
+
+  void _resetSessionState() {
+    _currentCustomer = null;
+    _currentEmployee = null;
+    _restaurant = null;
+    _accessToken = null;
+    _accountType = AuthAccountType.none;
+    _lastNotificationPayload = null;
+    _lastForegroundNotification = null;
+  }
+
+  // ── Notification event surface ─────────────────────────────────────────────
+  //
+  // Widgets (e.g. NotificationRouter) can listen to these via context.watch()
+  // and act on incoming notifications without needing a separate stream.
+
+  Map<String, dynamic>? _lastNotificationPayload;
+  dynamic _lastForegroundNotification; // NotificationModel
+
+  /// The most recent notification payload received while the app was in the
+  /// foreground or opened from a tapped notification.  Consumed by the UI
+  /// layer (e.g. NotificationRouter) and should be cleared after handling.
+  Map<String, dynamic>? get lastNotificationPayload => _lastNotificationPayload;
+
+  /// The most recent [NotificationModel] delivered in the foreground.
+  dynamic get lastForegroundNotification => _lastForegroundNotification;
+
+  /// Called by the UI after it has handled [lastNotificationPayload].
+  void clearLastNotificationPayload() {
+    _lastNotificationPayload = null;
+    notifyListeners();
+  }
+
+  /// Called by the UI after it has handled [lastForegroundNotification].
+  void clearLastForegroundNotification() {
+    _lastForegroundNotification = null;
+    notifyListeners();
   }
 }

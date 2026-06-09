@@ -23,19 +23,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
   FcmService? _fcmService;
 
-  final List<Widget> _employeeScreens = [
-    const HomeEmployeeScreen(),
-    const DiscoverScreen(),
-    const ProfileScreen(),
-  ];
-
-  final List<Widget> _customerScreens = [
-    const HomeCustomerScreen(),
-    const DiscoverScreen(),
-    const PointsWalletScreen(),
-    const ProfileScreen(),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -54,7 +41,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     await _fcmService!.initialize(
       customerId: auth.id,
-      accessToken: auth.accessToken,
+      getAccessToken: () => auth.accessToken,
       onNotificationTap: (payload) async {
         if (!mounted) return;
         await NotificationRouter.routeFromPayload(context, payload);
@@ -62,7 +49,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       onForegroundNotification: (notification) {
         notificationProvider.upsertForegroundNotification(notification);
 
-        // Mostrar snackbar quan es rep una notificació en foreground
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
