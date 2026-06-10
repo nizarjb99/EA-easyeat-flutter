@@ -8,6 +8,10 @@ import '../../services/customer_service.dart';
 import '../../models/customerStats.dart';
 import '../../widgets/language_dropdown_widget.dart';
 
+import '../../services/fcm_service.dart';
+import '../../services/notification_router.dart';
+import '../../providers/notification_provider.dart';
+
 // ─── Color Palette ──────────────────────────────────────────────────────────
 const Color _orange = Color(0xFFFF7A1A);
 const Color _green = Color(0xFF16A34A);
@@ -31,6 +35,40 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
   void initState() {
     super.initState();
     _loadCustomerStats();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeNotifications();
+    });
+  }
+
+  Future<void> _initializeNotifications() async {
+    final auth = context.read<AuthProvider>();
+    final notificationProvider = context.read<NotificationProvider>();
+
+    final fcmService = FcmService();
+
+    await fcmService.initialize(
+      customerId: auth.id,
+      getAccessToken: () => auth.accessToken,
+      onNotificationTap: (payload) async {
+        if (!mounted) return;
+        await NotificationRouter.routeFromPayload(context, payload);
+      },
+      onForegroundNotification: (notification) {
+        notificationProvider.upsertForegroundNotification(notification);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(notification.message),
+            action: SnackBarAction(
+              label: 'Veure',
+              onPressed: () {
+                Navigator.pushNamed(context, '/notifications');
+              },
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _loadCustomerStats() async {
@@ -257,7 +295,7 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 18, offset: const Offset(0, 8))],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 18, offset: const Offset(0, 8))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,7 +368,7 @@ class _ActionButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
            boxShadow: [
              BoxShadow(
-               color: Colors.black.withValues(alpha: 0.04),
+               color: Colors.black.withOpacity(0.04),
                blurRadius: 14,
                offset: const Offset(0, 6),
              ),
@@ -343,7 +381,7 @@ class _ActionButton extends StatelessWidget {
               height: 44,
               width: 44,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
+                color: color.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(icon, color: color, size: 24),
