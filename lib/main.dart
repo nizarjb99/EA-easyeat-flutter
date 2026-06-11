@@ -10,6 +10,7 @@ import 'providers/chat_provider.dart';
 import 'providers/location_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/restaurant_provider.dart';
+import 'providers/google_wallet_provider.dart';
 
 import 'screens/_auth/landing_screen.dart';
 import 'screens/_auth/legal_notice_screen.dart';
@@ -57,6 +58,7 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => RestaurantProvider()),
           ChangeNotifierProvider(create: (_) => ChatProvider()),
           ChangeNotifierProvider(create: (_) => locationProvider),
+          ChangeNotifierProvider(create: (_) => GoogleWalletProvider()),
 
           ChangeNotifierProxyProvider<AuthProvider, NotificationProvider>(
             create: (_) => NotificationProvider(),
