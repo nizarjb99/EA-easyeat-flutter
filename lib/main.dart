@@ -10,6 +10,7 @@ import 'providers/chat_provider.dart';
 import 'providers/location_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/restaurant_provider.dart';
+import 'providers/theme_provider.dart';
 
 import 'screens/_auth/landing_screen.dart';
 import 'screens/_auth/legal_notice_screen.dart';
@@ -57,6 +58,7 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => RestaurantProvider()),
           ChangeNotifierProvider(create: (_) => ChatProvider()),
           ChangeNotifierProvider(create: (_) => locationProvider),
+          ChangeNotifierProvider(create: (_) => ThemeProvider()),
 
           ChangeNotifierProxyProvider<AuthProvider, NotificationProvider>(
             create: (_) => NotificationProvider(),
@@ -77,12 +79,14 @@ class EventManagerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'EasyEat',
       theme: AppStyles.lightTheme,
       darkTheme: AppStyles.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: themeProvider.themeMode,
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,

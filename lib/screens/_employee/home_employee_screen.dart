@@ -10,6 +10,7 @@ import '../../utils/styles.dart';
 import '../_employee/customer_qr_scanner_screen.dart';
 import '../../models/employeeStats.dart';
 import '../../widgets/language_dropdown_widget.dart';
+import '../../widgets/theme_toggle_widget.dart';
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const Color _orange = Color(0xFFFF7A1A);
@@ -268,11 +269,15 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
     final isOwner = role == 'owner';
     final displayName = _firstName(auth.displayName);
     final stats = _employeeStats;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? AppColors.dashboardBg : _background;
+    final surfaceColor = isDark ? AppColors.dashboardHeader : Colors.white;
+    final textColor = isDark ? AppColors.text : _dark;
 
     return Scaffold(
-      backgroundColor: _background,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: surfaceColor,
         elevation: 0,
         title: FittedBox(
           fit: BoxFit.scaleDown,
@@ -283,7 +288,7 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
               const SizedBox(width: 8),
               Text(
                 'EasyEat',
-                style: TextStyle(color: _dark, fontWeight: FontWeight.w900),
+                style: TextStyle(color: textColor, fontWeight: FontWeight.w900),
               ),
               const SizedBox(width: 8),
               _RoleBadge(role: role),
@@ -291,13 +296,14 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
           ),
         ),
         actions: [
-          LanguageDropdownWidget(),
+          const ThemeToggleWidget(),
+          const LanguageDropdownWidget(),
           if (MediaQuery.of(context).size.width >= 600)
             Center(
               child: Text(
                 displayName,
-                style: const TextStyle(
-                  color: _dark,
+                style: TextStyle(
+                  color: textColor,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -308,7 +314,7 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
               auth.logout();
               Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
             },
-            icon: const Icon(Icons.logout, color: _dark),
+            icon: Icon(Icons.logout, color: textColor),
           ),
         ],
       ),
@@ -484,16 +490,20 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textColor = Theme.of(context).brightness == Brightness.dark
+        ? AppColors.text
+        : _dark;
+
     return Row(
       children: [
         Icon(icon, color: _orange, size: 20),
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w900,
-            color: _dark,
+            color: textColor,
           ),
         ),
       ],
@@ -557,18 +567,25 @@ class _KpiTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final textColor = isDark ? AppColors.text : _dark;
+    final mutedColor = isDark ? AppColors.textMuted : _grey;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -590,18 +607,18 @@ class _KpiTile extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 child: Text(
                   card.value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
-                    color: _dark,
+                    color: textColor,
                   ),
                 ),
               ),
               Text(
                 card.label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
-                  color: _grey,
+                  color: mutedColor,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -710,14 +727,20 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final borderColor = isDark ? AppColors.glassBorder : _cardBorder;
+    final textColor = isDark ? AppColors.text : _dark;
+    final mutedColor = isDark ? AppColors.textMuted : _grey;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: surfaceColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: _cardBorder),
+          border: Border.all(color: borderColor),
         ),
         child: Row(
           children: [
@@ -737,18 +760,18 @@ class _ActionButton extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w900,
-                      color: _dark,
+                      color: textColor,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     sublabel,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: _grey,
+                      color: mutedColor,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -774,14 +797,20 @@ class _ActivityFeed extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final borderColor = isDark ? AppColors.glassBorder : _cardBorder;
+    final textColor = isDark ? AppColors.text : _dark;
+    final mutedColor = isDark ? AppColors.textMuted : _grey;
+
     if (entries.isEmpty) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: surfaceColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: _cardBorder),
+          border: Border.all(color: borderColor),
         ),
         child: Column(
           children: [
@@ -789,17 +818,17 @@ class _ActivityFeed extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               'home.no_activity'.tr(),
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 16,
-                color: _dark,
+                color: textColor,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Activity will appear here as visits and rewards are registered.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: _grey, fontSize: 13),
+              style: TextStyle(color: mutedColor, fontSize: 13),
             ),
           ],
         ),
@@ -808,9 +837,9 @@ class _ActivityFeed extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _cardBorder),
+        border: Border.all(color: borderColor),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -867,12 +896,17 @@ class _FeedTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.glassBorder : _cardBorder;
+    final textColor = isDark ? AppColors.text : _dark;
+    final mutedColor = isDark ? AppColors.textMuted : _grey;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         border: isLast
             ? null
-            : const Border(bottom: BorderSide(color: _cardBorder)),
+            : Border(bottom: BorderSide(color: borderColor)),
       ),
       child: Row(
         children: [
@@ -889,16 +923,16 @@ class _FeedTile extends StatelessWidget {
           Expanded(
             child: Text(
               entry.text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: _dark,
+                color: textColor,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
           Text(
             _timeLabel(),
-            style: const TextStyle(fontSize: 12, color: _grey),
+            style: TextStyle(fontSize: 12, color: mutedColor),
           ),
         ],
       ),

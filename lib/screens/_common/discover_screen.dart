@@ -7,6 +7,7 @@ import 'package:ea_easyeat_flutter/screens/_common/restaurant_detail_screen.dart
 import 'package:ea_easyeat_flutter/screens/_common/map_screen.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../widgets/language_dropdown_widget.dart';
+import '../../widgets/theme_toggle_widget.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
@@ -91,7 +92,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         title: Text('discover.title'.tr()),
         centerTitle: true,
         actions: [
-          LanguageDropdownWidget(),
+          const ThemeToggleWidget(),
+          const LanguageDropdownWidget(),
           IconButton(
             icon: const Icon(Icons.map),
             tooltip: 'discover.open_map'.tr(),
@@ -214,4 +216,4 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 ),
     );
   }
-}
+}

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/styles.dart';
 import '../../widgets/language_dropdown_widget.dart';
+import '../../widgets/theme_toggle_widget.dart';
 
 const Color _profileDark = AppColors.authText;
 const Color _profileMuted = AppColors.authTextMuted;
@@ -77,21 +78,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final roleKey = authProvider.role ?? (authProvider.isCustomer ? 'customer' : 'staff');
     final roleLabel = 'dashboard.roles.$roleKey'.tr();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? AppColors.dashboardBg : const Color(0xFFF8FAFC);
+    final surfaceColor = isDark ? AppColors.dashboardHeader : _profileSurface;
+    final titleColor = isDark ? AppColors.text : _profileDark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: _profileSurface,
+        backgroundColor: surfaceColor,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        title: const Text(
+        title: Text(
           'EasyEat',
-          style: TextStyle(color: _profileDark, fontWeight: FontWeight.w900),
+          style: TextStyle(color: titleColor, fontWeight: FontWeight.w900),
         ),
-        actions: const [
-          LanguageDropdownWidget(),
-          SizedBox(width: 8),
+        actions: [
+          const ThemeToggleWidget(),
+          const LanguageDropdownWidget(),
+          const SizedBox(width: 8),
         ],
       ),
       body: authProvider.isLoggedIn
