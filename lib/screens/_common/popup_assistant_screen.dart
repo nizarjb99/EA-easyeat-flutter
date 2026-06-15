@@ -2,19 +2,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/llm.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/llm_service.dart';
 
 class PopupAssistantScreen extends StatefulWidget {
-  final String? restaurantId;
-  final String? restaurantName;
-
-  const PopupAssistantScreen({
-    super.key,
-    this.restaurantId,
-    this.restaurantName,
-  });
+  const PopupAssistantScreen({super.key});
 
   @override
   State<PopupAssistantScreen> createState() => _PopupAssistantScreenState();
@@ -365,7 +357,6 @@ class _PopupAssistantScreenState extends State<PopupAssistantScreen> {
   Widget _buildLoadingBubble() {
     const Color orange = Color(0xFFFF7A1A);
     const Color dark = Color(0xFF0F172A);
-    const Color grey = Color(0xFF64748B);
 
     return Align(
       alignment: Alignment.centerLeft,
