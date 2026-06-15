@@ -39,10 +39,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('🗺️ Map'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('🗺️ Map'), elevation: 0),
       body: Consumer2<LocationProvider, RestaurantProvider>(
         builder: (context, locationProvider, restaurantProvider, _) {
           final mapCenter = locationProvider.mapCenterLocation;
@@ -62,7 +59,8 @@ class _MapScreenState extends State<MapScreen> {
                   _mapController = controller;
                 },
                 markers: _buildMarkers(restaurantProvider, locationProvider),
-                myLocationEnabled: locationProvider.permissionStatus ==
+                myLocationEnabled:
+                    locationProvider.permissionStatus ==
                     LocationPermissionStatus.granted,
                 myLocationButtonEnabled: false,
                 // Dismiss restaurant card when user taps on map
@@ -82,7 +80,10 @@ class _MapScreenState extends State<MapScreen> {
                 right: 16,
                 child: FloatingActionButton.extended(
                   onPressed: () => _handleSeeNearMe(
-                      context, locationProvider, restaurantProvider),
+                    context,
+                    locationProvider,
+                    restaurantProvider,
+                  ),
                   backgroundColor: const Color(0xFFFF7A1A),
                   label: const Text('📍 See Near Me'),
                   icon: const Icon(Icons.location_on),
@@ -94,9 +95,7 @@ class _MapScreenState extends State<MapScreen> {
                 Positioned.fill(
                   child: Container(
                     color: Colors.black.withOpacity(0.3),
-                    child: const Center(
-                      child: CircularProgressIndicator(),
-                    ),
+                    child: const Center(child: CircularProgressIndicator()),
                   ),
                 ),
 
@@ -119,7 +118,9 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildRestaurantCardOverlay(
-      Restaurant restaurant, LocationProvider locationProvider) {
+    Restaurant restaurant,
+    LocationProvider locationProvider,
+  ) {
     final distance = _formatDistance(restaurant, locationProvider);
 
     return RestaurantCard(
@@ -144,7 +145,9 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   String _formatDistance(
-      Restaurant restaurant, LocationProvider locationProvider) {
+    Restaurant restaurant,
+    LocationProvider locationProvider,
+  ) {
     final coords = restaurant.profile.location.coordinates.coordinates;
     if (coords.length != 2) return "-- km";
 
@@ -171,8 +174,7 @@ class _MapScreenState extends State<MapScreen> {
     RestaurantProvider restaurantProvider,
   ) async {
     // If permission already granted, just load nearby restaurants
-    if (locationProvider.permissionStatus ==
-            LocationPermissionStatus.granted &&
+    if (locationProvider.permissionStatus == LocationPermissionStatus.granted &&
         locationProvider.currentPosition != null) {
       await restaurantProvider.loadNearbyRestaurants(
         locationProvider.currentPosition!.latitude,
@@ -257,9 +259,7 @@ class _MapScreenState extends State<MapScreen> {
             locationProvider.currentPosition!.longitude,
           ),
           infoWindow: const InfoWindow(title: 'Your Location'),
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueBlue,
-          ),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
         ),
       );
     }
@@ -278,7 +278,10 @@ class _MapScreenState extends State<MapScreen> {
       markers.add(
         Marker(
           markerId: MarkerId(restaurant.id),
-          position: LatLng(coords[1], coords[0]), // [lng, lat] -> LatLng(lat, lng)
+          position: LatLng(
+            coords[1],
+            coords[0],
+          ), // [lng, lat] -> LatLng(lat, lng)
           infoWindow: InfoWindow(title: restaurant.profile.name),
           icon: BitmapDescriptor.defaultMarkerWithHue(
             _showNearby ? BitmapDescriptor.hueOrange : BitmapDescriptor.hueRed,
