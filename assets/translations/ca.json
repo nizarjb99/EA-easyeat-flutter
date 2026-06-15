@@ -96,5 +96,23 @@
     "points_unit": "punts",
     "info_banner": "Els punts s'actualitzen quan s'afegeix una visita o es canvia una recompensa. Llisca cap avall per actualitzar el saldo.",
     "not_logged_in": "Has d'iniciar sessió com a client per veure la teva cartera de punts."
+  },
+  "assistant": {
+    "title": "Assistent IA",
+    "subtitle": "EasyEat · IA",
+    "notes1": "L'assistent no té memòria.",
+    "notes2": "Les converses no es guarden.",
+    "clear": "Netejar conversa",
+    "close": "Tancar assistent",
+    "empty_title": "Com puc ajudar-te?",
+    "empty_desc": "Pregunta'm qualsevol cosa sobre restaurants, menú, recomanacions o punts.",
+    "suggestion_1": "Quins restaurants tens disponibles?",
+    "suggestion_2": "On puc menjar per menys de 10€?",
+    "suggestion_3": "Recomana'm un restaurant de pizza",
+    "thinking": "Pensant...",
+    "placeholder": "Escriu un missatge...",
+    "send": "Enviar missatge",
+    "hint": "Clica per enviar",
+    "error": "S'ha produït un error. Torna-ho a intentar."
   }
 }

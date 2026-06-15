@@ -96,5 +96,23 @@
     "points_unit": "puntos",
     "info_banner": "Los puntos se actualizan cuando se añade una visita o se canjea una recompensa. Desliza hacia abajo para actualizar el saldo.",
     "not_logged_in": "Debes iniciar sesión como cliente para ver tu cartera de puntos."
+  },
+  "assistant": {
+    "title": "Asistente IA",
+    "subtitle": "EasyEat · IA",
+    "notes1": "El asistente no tiene memoria.",
+    "notes2": "Las conversaciones no se guardan.",
+    "clear": "Limpiar conversación",
+    "close": "Cerrar asistente",
+    "empty_title": "¿Cómo puedo ayudarte?",
+    "empty_desc": "Pregúntame cualquier cosa sobre restaurantes, menús, recomendaciones o puntos.",
+    "suggestion_1": "¿Qué restaurantes tienes disponibles?",
+    "suggestion_2": "¿Dónde puedo comer por menos de 10€?",
+    "suggestion_3": "Recomiéndame un restaurante de pizza",
+    "thinking": "Pensando...",
+    "placeholder": "Escribe un mensaje...",
+    "send": "Enviar mensaje",
+    "hint": "Haz clic para enviar",
+    "error": "Se ha producido un error. Vuelve a intentarlo."
   }
 }

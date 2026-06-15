@@ -96,5 +96,23 @@
     "points_unit": "points",
     "info_banner": "Points are updated when a visit is added or a reward is redeemed. Pull down to refresh the latest balance.",
     "not_logged_in": "You need to be logged in as a customer to view your points wallet."
+  },
+  "assistant": {
+    "title": "AI Assistant",
+    "subtitle": "EasyEat · AI",
+    "notes1": "The assistant has no memory.",
+    "notes2": "Conversations are not saved.",
+    "clear": "Clear conversation",
+    "close": "Close assistant",
+    "empty_title": "How can I help you?",
+    "empty_desc": "Ask me anything about restaurants, menus, recommendations, or points.",
+    "suggestion_1": "What restaurants do you have available?",
+    "suggestion_2": "Where can I eat for less than 10€?",
+    "suggestion_3": "Recommend a pizza restaurant",
+    "thinking": "Thinking...",
+    "placeholder": "Write a message...",
+    "send": "Send message",
+    "hint": "Click to send",
+    "error": "An error occurred. Please try again."
   }
 }
