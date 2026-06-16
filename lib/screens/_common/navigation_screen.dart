@@ -8,6 +8,7 @@ import 'profile_screen.dart';
 import 'popup_chat_screen.dart';
 import '../_customer/home_customer_screen.dart';
 import '../_customer/points_wallet_screen.dart';
+import '../../features/accessibility/accessibility_floating_button.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -19,18 +20,7 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _employeeScreens = [
-    const HomeEmployeeScreen(),
-    const DiscoverScreen(),
-    const ProfileScreen(),
-  ];
 
-  final List<Widget> _customerScreens = [
-    const HomeCustomerScreen(),
-    const DiscoverScreen(),
-    const PointsWalletScreen(),
-    const ProfileScreen(),
-  ];
 
   void _onItemTapped(int index, bool isEmployee) {
     if (isEmployee) {
@@ -163,9 +153,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     ];
 
     return Scaffold(
-      body: isEmployee
-          ? employeeScreens[_selectedIndex]
-          : customerScreens[_selectedIndex],
+      body: Stack(
+        children: [
+          // ── Main page content ──────────────────────────────────────────
+          isEmployee
+              ? employeeScreens[_selectedIndex]
+              : customerScreens[_selectedIndex],
+
+          // ── Accessibility FAB – bottom: 96 keeps it above the nav bar
+          //    (nav bar ≈ 60–64 dp + extra 32 dp breathing room)
+          const Positioned(
+            right: 24,
+            bottom: 96,
+            child: AccessibilityFloatingButton(),
+          ),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         items: isEmployee ? employeeNavItems : customerNavItems,
         currentIndex:

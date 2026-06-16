@@ -5,9 +5,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'providers/auth_provider.dart';
 import 'providers/restaurant_provider.dart';
 import 'providers/location_provider.dart';
-import 'providers/chat_provider.dart';
 
 import 'utils/styles.dart';
+import 'features/accessibility/accessibility_controller.dart';
 
 import 'screens/_auth/landing_screen.dart';
 import 'screens/_auth/login_screen.dart';
@@ -19,8 +19,6 @@ import 'screens/_employee/visit_confirmation_screen.dart';
 import 'screens/_employee/exchange_reward_screen.dart';
 import 'screens/_employee/exchange_confirmation_screen.dart';
 
-// lib/main.dart (Key section)
-import 'providers/location_provider.dart'; // ADD THIS
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +26,10 @@ void main() async {
 
   final locationProvider = LocationProvider();
   await locationProvider.initialize();
+
+  // Load saved accessibility settings before the first frame.
+  final accessibilityController = AccessibilityController();
+  await accessibilityController.loadFromPrefs();
 
   runApp(
     EasyLocalization(
@@ -38,7 +40,10 @@ void main() async {
         providers: [
           ChangeNotifierProvider(create: (_) => AuthProvider()),
           ChangeNotifierProvider(create: (_) => RestaurantProvider()),
-          ChangeNotifierProvider(create: (_) => locationProvider), // ADD THIS
+          ChangeNotifierProvider(create: (_) => locationProvider),
+          ChangeNotifierProvider<AccessibilityController>(
+            create: (_) => accessibilityController,
+          ),
         ],
         child: EventManagerApp(),
       ),
