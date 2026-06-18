@@ -9,6 +9,7 @@ import 'popup_chat_screen.dart';
 import '../_customer/home_customer_screen.dart';
 import '../_customer/points_wallet_screen.dart';
 import '../../features/accessibility/accessibility_floating_button.dart';
+import '../../features/accessibility/accessibility_widgets.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -153,21 +154,24 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     ];
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // ── Main page content ──────────────────────────────────────────
-          isEmployee
-              ? employeeScreens[_selectedIndex]
-              : customerScreens[_selectedIndex],
+      backgroundColor: Colors.transparent,
+      body: AccessibilityWrapper(
+        child: Stack(
+          children: [
+            // ── Main page content ──────────────────────────────────────────
+            isEmployee
+                ? employeeScreens[_selectedIndex]
+                : customerScreens[_selectedIndex],
 
-          // ── Accessibility FAB – bottom: 96 keeps it above the nav bar
-          //    (nav bar ≈ 60–64 dp + extra 32 dp breathing room)
-          const Positioned(
-            right: 24,
-            bottom: 96,
-            child: AccessibilityFloatingButton(),
-          ),
-        ],
+            // ── Accessibility FAB – bottom: 96 keeps it above the nav bar
+            //    (nav bar ≈ 60–64 dp + extra 32 dp breathing room)
+            const Positioned(
+              right: 24,
+              bottom: 96,
+              child: AccessibilityFloatingButton(),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: isEmployee ? employeeNavItems : customerNavItems,

@@ -43,7 +43,7 @@ class AccessibilityWrapper extends StatelessWidget {
         ),
         child: ColoredBox(
           color: ctrl.bgColor,
-          child: child,
+          child: SizedBox.expand(child: child),
         ),
       ),
     );

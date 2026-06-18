@@ -1,16 +1,6 @@
 import 'package:flutter/material.dart';
 import 'accessibility_panel.dart';
 
-/// Circular floating button that opens the accessibility panel.
-///
-/// Placement example (in a [Stack]):
-/// ```dart
-/// Positioned(
-///   right: 24,
-///   bottom: 96, // above the chat button at bottom: 24
-///   child: AccessibilityFloatingButton(),
-/// )
-/// ```
 class AccessibilityFloatingButton extends StatefulWidget {
   const AccessibilityFloatingButton({super.key});
 

@@ -270,9 +270,9 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
     final stats = _employeeStats;
 
     return Scaffold(
-      backgroundColor: _background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         title: FittedBox(
           fit: BoxFit.scaleDown,

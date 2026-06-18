@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/customer_service.dart';
 import '../../models/customerStats.dart';
 import '../../widgets/language_dropdown_widget.dart';
+import '../../features/accessibility/accessibility_controller.dart';
 
 // ─── Color Palette ──────────────────────────────────────────────────────────
 const Color _orange = Color(0xFFFF7A1A);
@@ -70,11 +71,12 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final stats = _customerStats;
-
+    final a11y = context.watch<AccessibilityController>();
+    
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBF7),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         title: FittedBox(
           fit: BoxFit.scaleDown,
@@ -85,7 +87,13 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
               const SizedBox(width: 8),
               Text(
                 'EasyEat',
-                style: TextStyle(color: _dark, fontWeight: FontWeight.w900),
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: a11y.textColor,
+                  letterSpacing: a11y.letterSpacing,
+                  height: a11y.lineHeight,
+                  fontFamily: a11y.fontFamilyName,
+                ),
               ),
             ],
           ),

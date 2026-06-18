@@ -79,9 +79,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final roleLabel = 'dashboard.roles.$roleKey'.tr();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: _profileSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
