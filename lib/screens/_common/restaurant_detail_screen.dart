@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import '../../models/restaurant.dart';
 import '../../models/reward.dart';
 import '../../models/dish.dart';
+import '../../models/review.dart';
 import '../../services/restaurant_service.dart';
+import '../../services/review_service.dart';
+import '../../services/auth_service.dart';
 import '../../widgets/reward_card.dart';
 import '../../widgets/dish_card.dart';
 import '../../widgets/dish_skeleton_card.dart';
@@ -25,6 +28,7 @@ class RestaurantDetailScreen extends StatefulWidget {
 class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   late Restaurant _restaurant;
   final RestaurantService _restaurantService = RestaurantService();
+  final ReviewService _reviewService = ReviewService();
 
   // ...existing code...
   static const _orange = Color(0xFFFF6B35);
@@ -115,7 +119,8 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
 
                 // Reviews (preview de 2)
                 _ReviewsPreviewSection(
-                  reviewIds: _restaurant.reviews ?? [],
+                  restaurantId: _restaurant.id,
+                  reviewService: _reviewService,
                   globalRating: _restaurant.profile.globalRating,
                   accentColor: _orange,
                   orangeLight: _orangeLight,
@@ -786,8 +791,9 @@ class _DishesPreviewSection extends StatelessWidget {
 // REVIEWS (preview)
 // ---------------------------------------------------------------------------
 
-class _ReviewsPreviewSection extends StatelessWidget {
-  final List<String> reviewIds;
+class _ReviewsPreviewSection extends StatefulWidget {
+  final String restaurantId;
+  final ReviewService reviewService;
   final double globalRating;
   final Color accentColor;
   final Color orangeLight;
@@ -796,7 +802,8 @@ class _ReviewsPreviewSection extends StatelessWidget {
   final VoidCallback onSeeAllPressed;
 
   const _ReviewsPreviewSection({
-    required this.reviewIds,
+    required this.restaurantId,
+    required this.reviewService,
     required this.globalRating,
     required this.accentColor,
     required this.orangeLight,
@@ -806,9 +813,36 @@ class _ReviewsPreviewSection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final count = reviewIds.length;
+  State<_ReviewsPreviewSection> createState() => _ReviewsPreviewSectionState();
+}
 
+class _ReviewsPreviewSectionState extends State<_ReviewsPreviewSection> {
+  // Clau per forçar la recàrrega quan s'afegeix una nova review
+  Key _futureKey = UniqueKey();
+
+  void _refreshReviews() {
+    setState(() {
+      _futureKey = UniqueKey();
+    });
+  }
+
+  void _showCreateReviewSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _CreateReviewBottomSheet(
+        restaurantId: widget.restaurantId,
+        reviewService: widget.reviewService,
+        accentColor: widget.accentColor,
+        textDark: widget.textDark,
+        onReviewCreated: _refreshReviews,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
@@ -817,13 +851,12 @@ class _ReviewsPreviewSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _SectionTitle(title: 'Reviews', textDark: textDark),
-              if (count > 0)
-                TextButton(
-                  onPressed: onSeeAllPressed,
-                  style: TextButton.styleFrom(foregroundColor: accentColor),
-                  child: Text('Veure les $count'),
-                ),
+              _SectionTitle(title: 'Reviews', textDark: widget.textDark),
+              TextButton(
+                onPressed: widget.onSeeAllPressed,
+                style: TextButton.styleFrom(foregroundColor: widget.accentColor),
+                child: const Text('Veure totes'),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -831,17 +864,17 @@ class _ReviewsPreviewSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: orangeLight,
+              color: widget.orangeLight,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
               children: [
                 Text(
-                  globalRating.toStringAsFixed(1),
+                  widget.globalRating.toStringAsFixed(1),
                   style: TextStyle(
                     fontSize: 40,
                     fontWeight: FontWeight.w900,
-                    color: accentColor,
+                    color: widget.accentColor,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -851,50 +884,149 @@ class _ReviewsPreviewSection extends StatelessWidget {
                     children: [
                       Row(
                         children: List.generate(5, (i) {
-                          final filled = i < (globalRating / 2).round();
+                          final filled = i < (widget.globalRating / 2).round();
                           return Icon(
                             filled ? Icons.star_rounded : Icons.star_outline_rounded,
-                            color: accentColor,
+                            color: widget.accentColor,
                             size: 20,
                           );
                         }),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '$count opinions',
-                        style: TextStyle(color: textMuted, fontSize: 13),
+                        'Puntuació global',
+                        style: TextStyle(color: widget.textMuted, fontSize: 13),
                       ),
                     ],
                   ),
                 ),
+                ElevatedButton(
+                  onPressed: _showCreateReviewSheet,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: widget.accentColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                  child: const Text('Opinar', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
               ],
             ),
           ),
-          // Placeholder de reviews (substituir per dades reals)
-          if (count > 0) ...[
-            const SizedBox(height: 12),
-            _ReviewPlaceholderCard(accentColor: accentColor, textDark: textDark, textMuted: textMuted),
-          ],
+          const SizedBox(height: 12),
+          FutureBuilder<List<Review>>(
+            key: _futureKey,
+            future: widget.reviewService.fetchReviewsByRestaurant(widget.restaurantId, limit: 2),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(),
+                ));
+              }
+              if (snapshot.hasError) {
+                return Text('Error carregant opinions', style: TextStyle(color: widget.textMuted));
+              }
+              final reviews = snapshot.data ?? [];
+              if (reviews.isEmpty) {
+                return Text('Encara no hi ha opinions.', style: TextStyle(color: widget.textMuted));
+              }
+              
+              return Column(
+                children: reviews.map((r) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _ReviewCard(
+                    review: r, 
+                    restaurantId: widget.restaurantId,
+                    reviewService: widget.reviewService,
+                    accentColor: widget.accentColor, 
+                    textDark: widget.textDark, 
+                    textMuted: widget.textMuted
+                  ),
+                )).toList(),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 }
 
-class _ReviewPlaceholderCard extends StatelessWidget {
+class _ReviewCard extends StatefulWidget {
+  final Review review;
+  final String restaurantId;
+  final ReviewService reviewService;
   final Color accentColor;
   final Color textDark;
   final Color textMuted;
 
-  const _ReviewPlaceholderCard({
+  const _ReviewCard({
+    required this.review,
+    required this.restaurantId,
+    required this.reviewService,
     required this.accentColor,
     required this.textDark,
     required this.textMuted,
   });
 
   @override
+  State<_ReviewCard> createState() => _ReviewCardState();
+}
+
+class _ReviewCardState extends State<_ReviewCard> {
+  bool _isLiked = false;
+  int _likesCount = 0;
+  String? _userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _likesCount = widget.review.likes;
+    _initLikeState();
+  }
+
+  Future<void> _initLikeState() async {
+    _userId = await AuthService().getUserId();
+    if (_userId != null && widget.review.likedBy.contains(_userId)) {
+      if (mounted) setState(() { _isLiked = true; });
+    }
+  }
+
+  void _toggleLike() async {
+    if (_userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cal iniciar sessió per donar like')),
+      );
+      return;
+    }
+    
+    setState(() {
+      _isLiked = !_isLiked;
+      _likesCount += _isLiked ? 1 : -1;
+    });
+
+    try {
+      final token = await AuthService().getAccessToken();
+      await widget.reviewService.likeReview(widget.restaurantId, widget.review.id, accessToken: token);
+    } catch (e) {
+      // Revert if error
+      if (mounted) {
+        setState(() {
+          _isLiked = !_isLiked;
+          _likesCount += _isLiked ? 1 : -1;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al donar like')),
+        );
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // TODO: substituir per widget que rep un objecte IReview real
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -912,23 +1044,175 @@ class _ReviewPlaceholderCard extends StatelessWidget {
               CircleAvatar(radius: 16, backgroundColor: Colors.grey.shade200, child: Icon(Icons.person, color: Colors.grey.shade400, size: 18)),
               const SizedBox(width: 8),
               Expanded(
-                child: Text('Usuari anònim', style: TextStyle(fontWeight: FontWeight.w600, color: textDark, fontSize: 13)),
+                child: Text('Usuari', style: TextStyle(fontWeight: FontWeight.w600, color: widget.textDark, fontSize: 13)),
               ),
               Row(
                 children: [
-                  Icon(Icons.star_rounded, color: accentColor, size: 14),
+                  Icon(Icons.star_rounded, color: widget.accentColor, size: 14),
                   const SizedBox(width: 2),
-                  Text('8.5', style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 12)),
+                  Text(widget.review.globalRating.toStringAsFixed(1), style: TextStyle(color: widget.accentColor, fontWeight: FontWeight.bold, fontSize: 12)),
                 ],
               ),
             ],
           ),
+          if (widget.review.comment != null && widget.review.comment!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              '"${widget.review.comment}"',
+              style: TextStyle(color: widget.textMuted, fontSize: 13, fontStyle: FontStyle.italic),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
           const SizedBox(height: 8),
-          Text(
-            '"Molt bona experiència, el peix fresc i el servei excel·lent."',
-            style: TextStyle(color: textMuted, fontSize: 13, fontStyle: FontStyle.italic),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              InkWell(
+                onTap: _toggleLike,
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                        color: _isLiked ? Colors.redAccent : widget.textMuted,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$_likesCount',
+                        style: TextStyle(color: _isLiked ? Colors.redAccent : widget.textMuted, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CreateReviewBottomSheet extends StatefulWidget {
+  final String restaurantId;
+  final ReviewService reviewService;
+  final Color accentColor;
+  final Color textDark;
+  final VoidCallback onReviewCreated;
+
+  const _CreateReviewBottomSheet({
+    required this.restaurantId,
+    required this.reviewService,
+    required this.accentColor,
+    required this.textDark,
+    required this.onReviewCreated,
+  });
+
+  @override
+  State<_CreateReviewBottomSheet> createState() => _CreateReviewBottomSheetState();
+}
+
+class _CreateReviewBottomSheetState extends State<_CreateReviewBottomSheet> {
+  double _rating = 5.0;
+  final _commentController = TextEditingController();
+  bool _isLoading = false;
+
+  Future<void> _submitReview() async {
+    final userId = await AuthService().getUserId();
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cal iniciar sessió per opinar')));
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final token = await AuthService().getAccessToken();
+      final newReview = Review(
+        id: '', // Assignat pel backend
+        customerId: userId,
+        restaurantId: widget.restaurantId,
+        date: DateTime.now(),
+        globalRating: _rating,
+        images: [],
+        comment: _commentController.text.trim(),
+        likedBy: [],
+      );
+      
+      await widget.reviewService.createReview(widget.restaurantId, newReview, accessToken: token);
+      widget.onReviewCreated();
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        left: 20, right: 20, top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Escriure una opinió', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: widget.textDark)),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (index) {
+              return IconButton(
+                icon: Icon(
+                  index < _rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                  color: widget.accentColor,
+                  size: 36,
+                ),
+                onPressed: () => setState(() => _rating = index + 1.0),
+              );
+            }),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _commentController,
+            maxLines: 3,
+            decoration: InputDecoration(
+              hintText: 'Explica la teva experiència (opcional)...',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: widget.accentColor),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _submitReview,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: widget.accentColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: _isLoading 
+                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('Enviar opinió', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
           ),
         ],
       ),
