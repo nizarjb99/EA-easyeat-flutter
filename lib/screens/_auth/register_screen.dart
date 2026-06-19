@@ -226,6 +226,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     : const Text('Finalizar Registro', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                               ),
                             ),
+                            
+                            const SizedBox(height: 24),
+                            const Row(
+                              children: [
+                                Expanded(child: Divider(color: Color(0xFFCBD5E1))),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 16),
+                                  child: Text('O', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                                ),
+                                Expanded(child: Divider(color: Color(0xFFCBD5E1))),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            
+                            SizedBox(
+                              width: double.infinity,
+                              height: 56,
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF0F172A),
+                                  side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                                onPressed: authProvider.isLoading ? null : () {
+                                  context.read<AuthProvider>().registerWithGoogle().then((success) {
+                                    if (success && mounted) {
+                                      // If registered successfully, it also logs them in, 
+                                      // and main.dart might handle routing if auth state changes, 
+                                      // or we explicitly push to dashboard.
+                                      // We don't push here because main.dart Consumer might take care of it,
+                                      // but to be safe:
+                                      // Wait, regular register relies on Consumer in main.dart:
+                                      // "Success! main.dart will switch home automatically"
+                                    }
+                                  });
+                                },
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text('G', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.blue)),
+                                    SizedBox(width: 12),
+                                    Text(
+                                      'Registrarse con Google',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
