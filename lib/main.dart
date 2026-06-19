@@ -14,7 +14,6 @@ import 'providers/theme_provider.dart';
 
 import 'screens/_auth/legal_notice_screen.dart';
 import 'screens/_common/accessibility/accessibility_controller.dart';
-import 'screens/_auth/landing_screen.dart';
 import 'screens/_auth/login_screen.dart';
 import 'screens/_auth/register_screen.dart';
 import 'screens/_common/notification_screen.dart';
