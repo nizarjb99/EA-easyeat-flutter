@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/styles.dart';
+import '../../widgets/easy_eat_logo.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -94,22 +95,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 24),
                       
                       // Logo and Brand
-                      Center(
-                        child: Column(
-                          children: [
-                            const Text('🍽️', style: TextStyle(fontSize: 48)),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'EasyEat',
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF0F172A),
-                                letterSpacing: -1,
-                              ),
-                            ),
-                          ],
-                        ),
+                      const Center(
+                        child: EasyEatLogo(height: 90),
                       ),
                       const SizedBox(height: 32),
 

@@ -8,6 +8,7 @@ import '../../services/customer_service.dart';
 import '../../models/customerStats.dart';
 import '../../widgets/language_dropdown_widget.dart';
 import '../../widgets/theme_toggle_widget.dart';
+import '../../widgets/easy_eat_logo.dart';
 import '../../utils/styles.dart';
 
 import '../../services/fcm_service.dart';
@@ -121,19 +122,9 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
       appBar: AppBar(
         backgroundColor: surfaceColor,
         elevation: 0,
-        title: FittedBox(
+        title: const FittedBox(
           fit: BoxFit.scaleDown,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('🍽️', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 8),
-              Text(
-                'EasyEat',
-                style: TextStyle(color: textColor, fontWeight: FontWeight.w900),
-              ),
-            ],
-          ),
+          child: EasyEatLogo(height: 50),
         ),
         actions: [
           const ThemeToggleWidget(),
