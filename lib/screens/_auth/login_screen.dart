@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../providers/auth_provider.dart';
 import 'register_screen.dart';
 import '../../utils/styles.dart';
-
+import '../../widgets/language_selector.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -59,6 +60,16 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           
+          const SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: LanguageSelector(),
+              ),
+            ),
+          ),
+          
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40),
@@ -88,9 +99,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Bienvenido de vuelta',
-                            style: TextStyle(
+                          Text(
+                            'auth.welcome_back'.tr(),
+                            style: const TextStyle(
                               fontSize: 26,
                               fontWeight: FontWeight.w800,
                               color: Color(0xFF0F172A),
@@ -98,9 +109,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
-                            'Inicia sesión para acceder a tu panel principal',
-                            style: TextStyle(color: Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w500),
+                          Text(
+                            'auth.login_subtitle'.tr(),
+                            style: const TextStyle(color: Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w500),
                           ),
                           const SizedBox(height: 32),
                           
@@ -113,8 +124,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             child: Row(
                               children: [
-                                _buildTabBtn('customer', 'Cliente', Icons.person_outline),
-                                _buildTabBtn('employee', 'Restaurante', Icons.business_center_outlined),
+                                _buildTabBtn('customer', 'auth.customer'.tr(), Icons.person_outline),
+                                _buildTabBtn('employee', 'auth.employee'.tr(), Icons.business_center_outlined),
                               ],
                             ),
                           ),
@@ -122,16 +133,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           
                           _buildTextField(
                             controller: _emailController,
-                            label: 'Correo electrónico',
-                            placeholder: 'Introduzca tu correo...',
+                            label: 'auth.email_label'.tr(),
+                            placeholder: 'auth.email_placeholder'.tr(),
                             icon: Icons.mail_outline,
                           ),
                           const SizedBox(height: 20),
                           
                           _buildTextField(
                             controller: _passwordController,
-                            label: 'Contraseña',
-                            placeholder: '••••••••',
+                            label: 'auth.password_label'.tr(),
+                            placeholder: 'auth.password_placeholder'.tr(),
                             icon: Icons.lock_outline,
                             isPassword: true,
                             isVisible: _isPasswordVisible,
@@ -178,22 +189,22 @@ class _LoginScreenState extends State<LoginScreen> {
                                       width: 24,
                                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                                     )
-                                  : const Text(
-                                      'Acceder a mi cuenta',
-                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                  : Text(
+                                      'auth.login_button'.tr(),
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                                     ),
                             ),
                           ),
                           
                           const SizedBox(height: 24),
-                          const Row(
+                          Row(
                             children: [
-                              Expanded(child: Divider(color: Color(0xFFCBD5E1))),
+                              const Expanded(child: Divider(color: Color(0xFFCBD5E1))),
                               Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 16),
-                                child: Text('O', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text('auth.or'.tr(), style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
                               ),
-                              Expanded(child: Divider(color: Color(0xFFCBD5E1))),
+                              const Expanded(child: Divider(color: Color(0xFFCBD5E1))),
                             ],
                           ),
                           const SizedBox(height: 24),
@@ -218,14 +229,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   }
                                 });
                               },
-                              child: const Row(
+                              child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text('G', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.blue)),
-                                  SizedBox(width: 12),
+                                  const Text('G', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.blue)),
+                                  const SizedBox(width: 12),
                                   Text(
-                                    'Continuar con Google',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                    'auth.google_continue'.tr(),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                                   ),
                                 ],
                               ),
@@ -239,9 +250,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
-                          '¿No tienes cuenta todavía?',
-                          style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                        Text(
+                          'auth.no_account'.tr(),
+                          style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                         ),
                         TextButton(
                           onPressed: () {
@@ -251,7 +262,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             );
                           },
                           child: Text(
-                            'Regístrate gratis',
+                            'auth.register_free'.tr(),
                             style: TextStyle(color: primaryColor, fontWeight: FontWeight.w700),
                           ),
                         ),

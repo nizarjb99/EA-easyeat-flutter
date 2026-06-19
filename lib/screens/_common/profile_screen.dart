@@ -6,6 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../utils/styles.dart';
 import '../../widgets/language_dropdown_widget.dart';
 import '../../widgets/theme_toggle_widget.dart';
+import '../../widgets/easy_eat_logo.dart';
 
 const Color _profileDark = AppColors.authText;
 const Color _profileMuted = AppColors.authTextMuted;
@@ -119,10 +120,7 @@ void initState() {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        title: Text(
-          'EasyEat',
-          style: TextStyle(color: titleColor, fontWeight: FontWeight.w900),
-        ),
+        title: const EasyEatLogo(height: 40),
         actions: [
           const ThemeToggleWidget(),
           const LanguageDropdownWidget(),
