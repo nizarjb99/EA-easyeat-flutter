@@ -7,7 +7,7 @@ import 'providers/restaurant_provider.dart';
 import 'providers/location_provider.dart';
 
 import 'utils/styles.dart';
-import 'features/accessibility/accessibility_controller.dart';
+import 'screens/_common/accessibility/accessibility_controller.dart';
 
 import 'screens/_auth/landing_screen.dart';
 import 'screens/_auth/login_screen.dart';

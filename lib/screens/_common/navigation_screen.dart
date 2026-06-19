@@ -8,8 +8,8 @@ import 'profile_screen.dart';
 import 'popup_chat_screen.dart';
 import '../_customer/home_customer_screen.dart';
 import '../_customer/points_wallet_screen.dart';
-import '../../features/accessibility/accessibility_floating_button.dart';
-import '../../features/accessibility/accessibility_widgets.dart';
+import 'accessibility/accessibility_floating_button.dart';
+import 'accessibility/accessibility_widgets.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});

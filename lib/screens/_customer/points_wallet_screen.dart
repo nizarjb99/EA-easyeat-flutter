@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
-import '../../features/accessibility/accessibility_controller.dart';
+import '../_common/accessibility/accessibility_controller.dart';
 import '../../models/pointsWallet.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/customer_service.dart';

@@ -7,7 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/customer_service.dart';
 import '../../models/customerStats.dart';
 import '../../widgets/language_dropdown_widget.dart';
-import '../../features/accessibility/accessibility_controller.dart';
+import '../_common/accessibility/accessibility_controller.dart';
 
 // ─── Color Palette ──────────────────────────────────────────────────────────
 const Color _orange = Color(0xFFFF7A1A);
