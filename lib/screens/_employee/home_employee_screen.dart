@@ -271,14 +271,12 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
     final displayName = _firstName(auth.displayName);
     final stats = _employeeStats;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? AppColors.dashboardBg : _background;
-    final surfaceColor = isDark ? AppColors.dashboardHeader : Colors.white;
     final textColor = isDark ? AppColors.text : _dark;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: surfaceColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         title: FittedBox(
           fit: BoxFit.scaleDown,

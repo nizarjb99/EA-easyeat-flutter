@@ -13,6 +13,7 @@ import 'providers/restaurant_provider.dart';
 import 'providers/theme_provider.dart';
 
 import 'screens/_auth/legal_notice_screen.dart';
+import 'screens/_common/accessibility/accessibility_controller.dart';
 import 'screens/_auth/login_screen.dart';
 import 'screens/_auth/register_screen.dart';
 import 'screens/_common/notification_screen.dart';
@@ -48,6 +49,10 @@ Future<void> main() async {
   final authProvider = AuthProvider();
   authProvider.tryRestoreSession(); // intentionally not awaited
 
+  // Load saved accessibility settings before the first frame.
+  final accessibilityController = AccessibilityController();
+  await accessibilityController.loadFromPrefs();
+
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('en'), Locale('es'), Locale('ca')],
@@ -69,6 +74,9 @@ Future<void> main() async {
               notificationProvider!.bindAuth(auth);
               return notificationProvider;
             },
+          ),
+          ChangeNotifierProvider<AccessibilityController>(
+            create: (_) => accessibilityController,
           ),
         ],
         child: const EventManagerApp(),

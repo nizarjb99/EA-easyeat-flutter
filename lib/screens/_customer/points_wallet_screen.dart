@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
-
+import '../_common/accessibility/accessibility_controller.dart';
 import '../../models/pointsWallet.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/customer_service.dart';
@@ -168,16 +168,23 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
         : const Color(0xFFFFFBF7);
     final surfaceColor = isDark ? AppColors.dashboardHeader : Colors.white;
     final textColor = isDark ? AppColors.text : const Color(0xFF0F172A);
+    final a11y = context.watch<AccessibilityController>();
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: surfaceColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         title: Text(
           'wallet.title'.tr(),
-          style: TextStyle(fontWeight: FontWeight.w900, color: textColor),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: a11y.textColor,
+            letterSpacing: a11y.letterSpacing,
+            height: a11y.lineHeight,
+            fontFamily: a11y.fontFamilyName,
+          ),
         ),
         actions: [
           IconButton(
