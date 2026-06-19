@@ -259,6 +259,8 @@ class AuthProvider extends ChangeNotifier {
       await GoogleSignIn.instance.initialize(
         // Este es el Web Client ID que se usa como serverClientId para obtener el idToken
         serverClientId: '628423960645-kn89kchkb0adnspol23rm29qsae3mtpt.apps.googleusercontent.com',
+        // Client ID de iOS
+        clientId: '628423960645-ltdlujieph3vncdrfho9a544i2plucch.apps.googleusercontent.com',
       );
       _googleSignInInitialized = true;
     }
