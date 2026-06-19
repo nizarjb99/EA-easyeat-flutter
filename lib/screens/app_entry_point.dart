@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '_auth/login_screen.dart';
-import '_common/navigation_screen.dart'; // Import the new main navigation screen
+import '_common/navigation_screen.dart';
+import 'loading_splash.dart';
 
 class DashboardRouterScreen extends StatelessWidget {
   const DashboardRouterScreen({super.key});
@@ -12,12 +13,16 @@ class DashboardRouterScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
 
+    // tryRestoreSession() is started in main() before runApp, so _isLoading
+    // is already true on frame 1 — LoadingSplash shows with no blank flash.
+    if (auth.isLoading) {
+      return const LoadingSplash();
+    }
+
     if (!auth.isLoggedIn) {
       return const LoginScreen();
     }
 
-    // If logged in, navigate to the MainNavigationScreen which handles
-    // both customer and employee specific navigation via the bottom bar.
-    return MainNavigationScreen(); // Removed const
+    return MainNavigationScreen();
   }
 }

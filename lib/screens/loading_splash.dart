@@ -29,7 +29,7 @@ class LoadingSplash extends StatelessWidget {
 }
 
 // ── Logo complet: icona + EASY·EAT + subratllats + tagline ───────────────────
-class _EasyEatLogo extends StatelessWidget {
+/* class _EasyEatLogo extends StatelessWidget {
   const _EasyEatLogo();
 
   @override
@@ -37,18 +37,17 @@ class _EasyEatLogo extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Fila principal: icona + text
         Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const _ForkSpoonIcon(size: 52),
-            const SizedBox(width: 12),
+            const _ForkSpoonIcon(size: 40),
+            const SizedBox(width: 10),
             const Text(
               'EASY',
               style: TextStyle(
                 fontFamily: 'Arial',
-                fontSize: 52,
+                fontSize: 40,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF18B97A),
                 letterSpacing: -1,
@@ -56,10 +55,10 @@ class _EasyEatLogo extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 6),
               child: Container(
-                width: 7,
-                height: 7,
+                width: 6,
+                height: 6,
                 decoration: const BoxDecoration(
                   color: Color(0xFFCCCCCC),
                   shape: BoxShape.circle,
@@ -70,7 +69,7 @@ class _EasyEatLogo extends StatelessWidget {
               'EAT',
               style: TextStyle(
                 fontFamily: 'Arial',
-                fontSize: 52,
+                fontSize: 40,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFFE8450A),
                 letterSpacing: -1,
@@ -79,24 +78,23 @@ class _EasyEatLogo extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 6),
-        // Subratllats
+        const SizedBox(height: 5),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(width: 64), // icona + gap
+            const SizedBox(width: 50),
             Container(
-              width: 106,
-              height: 3,
+              width: 82,
+              height: 2.5,
               decoration: BoxDecoration(
                 color: const Color(0xFF18B97A).withOpacity(0.35),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(width: 23),
+            const SizedBox(width: 18),
             Container(
-              width: 78,
-              height: 3,
+              width: 60,
+              height: 2.5,
               decoration: BoxDecoration(
                 color: const Color(0xFFE8450A).withOpacity(0.35),
                 borderRadius: BorderRadius.circular(2),
@@ -104,16 +102,104 @@ class _EasyEatLogo extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 14),
-        // Tagline
+        const SizedBox(height: 10),
         const Text(
           'SIMPLE. FAST. DELICIOUS.',
           style: TextStyle(
             fontFamily: 'Arial',
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: FontWeight.w400,
             color: Color(0xFF999999),
-            letterSpacing: 3.5,
+            letterSpacing: 3.0,
+          ),
+        ),
+      ],
+    );
+  }
+} */
+
+class _EasyEatLogo extends StatelessWidget {
+  const _EasyEatLogo();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const _ForkSpoonIcon(size: 40),
+            const SizedBox(width: 10),
+            const Text(
+              'EASY',
+              style: TextStyle(
+                fontFamily: 'Arial',
+                fontSize: 40,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF18B97A),
+                letterSpacing: -1,
+                height: 1,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFCCCCCC),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            const Text(
+              'EAT',
+              style: TextStyle(
+                fontFamily: 'Arial',
+                fontSize: 40,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFFE8450A),
+                letterSpacing: -1,
+                height: 1,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(width: 50),
+            Container(
+              width: 82,
+              height: 2.5,
+              decoration: BoxDecoration(
+                color: const Color(0xFF18B97A).withOpacity(0.35),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 18),
+            Container(
+              width: 60,
+              height: 2.5,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8450A).withOpacity(0.35),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          'SIMPLE. FAST. DELICIOUS.',
+          style: TextStyle(
+            fontFamily: 'Arial',
+            fontSize: 10,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFF999999),
+            letterSpacing: 3.0,
           ),
         ),
       ],
@@ -129,9 +215,12 @@ class _ForkSpoonIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: size * 0.6,
+      width: size,
       height: size,
-      child: CustomPaint(painter: _ForkSpoonPainter()),
+      child: CustomPaint(
+        size: Size(size, size),
+        painter: _ForkSpoonPainter(),
+      ),
     );
   }
 }
