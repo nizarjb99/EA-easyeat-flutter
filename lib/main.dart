@@ -12,12 +12,12 @@ import 'providers/notification_provider.dart';
 import 'providers/restaurant_provider.dart';
 import 'providers/theme_provider.dart';
 
-import 'screens/_auth/landing_screen.dart';
 import 'screens/_auth/legal_notice_screen.dart';
 import 'screens/_auth/login_screen.dart';
 import 'screens/_auth/register_screen.dart';
 import 'screens/_common/notification_screen.dart';
 import 'screens/app_entry_point.dart';
+import 'screens/loading_splash.dart';
 import 'screens/_employee/add_visit_screen.dart';
 import 'screens/_employee/exchange_confirmation_screen.dart';
 import 'screens/_employee/exchange_reward_screen.dart';
@@ -90,10 +90,10 @@ class EventManagerApp extends StatelessWidget {
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
-      // LandingScreen is the correct unauthenticated entry point.
+
       initialRoute: '/',
       routes: {
-        '/': (context) => const HomePage(),
+        '/': (context) => const DashboardRouterScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/dashboard': (context) => const DashboardRouterScreen(),
