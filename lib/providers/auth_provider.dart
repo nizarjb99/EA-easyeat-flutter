@@ -28,6 +28,7 @@ class AuthProvider extends ChangeNotifier {
 
   String? _accessToken;
   AuthAccountType _accountType = AuthAccountType.none;
+  bool _isInitializing = true;
   bool _isLoading = false;
   String _errorMessage = '';
 
@@ -77,6 +78,7 @@ class AuthProvider extends ChangeNotifier {
     return null;
   }
 
+  bool get isInitializing => _isInitializing;
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
@@ -88,20 +90,26 @@ class AuthProvider extends ChangeNotifier {
   /// If the token has expired, tries to refresh it via /auth/refresh.
   /// Initialises FCM if the session is restored successfully.
   /// Returns `true` if the session was restored successfully.
-  Future<bool> tryRestoreSession() async {
-    try {
-      final savedToken = await _authService.getAccessToken();
-      final savedUserId = await _authService.getUserId();
-      final savedRole = await _authService.getUserRole();
+Future<bool> tryRestoreSession() async {
+  // Idempotency guard: don't run while a restore is already in progress,
+  // and don't run again if the session is already established.
+  if (!_isInitializing && isLoggedIn) return true;
 
-      if (savedToken == null ||
-          savedToken.isEmpty ||
-          savedUserId == null ||
-          savedUserId.isEmpty ||
-          savedRole == null ||
-          savedRole.isEmpty) {
-        return false;
-      }
+  _isInitializing = true;
+  notifyListeners();
+  try {
+    final savedToken = await _authService.getAccessToken();
+    final savedUserId = await _authService.getUserId();
+    final savedRole = await _authService.getUserRole();
+
+    if (savedToken == null ||
+        savedToken.isEmpty ||
+        savedUserId == null ||
+        savedUserId.isEmpty ||
+        savedRole == null ||
+        savedRole.isEmpty) {
+      return false;  // finally s'encarregarà de _isLoading = false
+    }
 
       _accessToken = savedToken;
 
@@ -133,11 +141,16 @@ class AuthProvider extends ChangeNotifier {
       }
 
       return true;
-    } catch (e) {
+    } 
+    catch (e) {
       debugPrint('Session restore failed: $e');
       await _authService.logout();
       _resetSessionState();
       return false;
+    } 
+    finally {
+    _isInitializing = false;      // ← s'executa SEMPRE, sigui quin sigui el camí
+    notifyListeners();
     }
   }
 

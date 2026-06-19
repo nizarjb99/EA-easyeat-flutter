@@ -42,11 +42,12 @@ Future<void> main() async {
   final locationProvider = LocationProvider();
   await locationProvider.initialize();
 
-  // Restore saved session (if any) before building the widget tree.
-  // tryRestoreSession() also initialises FCM when it finds a valid customer
-  // session, so push notifications are ready before the first frame is drawn.
+  // Pre-create AuthProvider and kick off session restore BEFORE runApp.
+  // This ensures _isLoading is already true on the very first frame, so
+  // DashboardRouterScreen immediately renders LoadingSplash — no blank flash.
+  // tryRestoreSession() runs concurrently while the widget tree builds.
   final authProvider = AuthProvider();
-  await authProvider.tryRestoreSession();
+  authProvider.tryRestoreSession(); // intentionally not awaited
 
   // Load saved accessibility settings before the first frame.
   final accessibilityController = AccessibilityController();
@@ -59,6 +60,8 @@ Future<void> main() async {
       fallbackLocale: const Locale('en'),
       child: MultiProvider(
         providers: [
+          // Hand the pre-created instance to the provider tree so the
+          // in-flight tryRestoreSession() notifies the correct listeners.
           ChangeNotifierProvider(create: (_) => authProvider),
           ChangeNotifierProvider(create: (_) => RestaurantProvider()),
           ChangeNotifierProvider(create: (_) => ChatProvider()),

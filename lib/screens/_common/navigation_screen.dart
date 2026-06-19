@@ -81,21 +81,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         _openChatPopup();
         return;
       }
-
-      setState(() {
-        _selectedIndex = index == 3 ? 2 : index;
-      });
-
-      return;
-    }
-
-    if (index == 3) {
-      _openChatPopup();
-      return;
+    } else {
+      if (index == 3) {
+        _openChatPopup();
+        return;
+      }
     }
 
     setState(() {
-      _selectedIndex = index == 4 ? 3 : index;
+      _selectedIndex = index;
     });
   }
 
@@ -111,18 +105,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   int _getEmployeeBottomIndex() {
-    if (_selectedIndex >= 2) {
-      return 3;
-    }
-
     return _selectedIndex;
   }
 
   int _getCustomerBottomIndex() {
-    if (_selectedIndex >= 3) {
-      return 4;
-    }
-
     return _selectedIndex;
   }
 
@@ -137,6 +123,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final List<Widget> employeeScreens = [
       HomeEmployeeScreen(key: localeKey),
       DiscoverScreen(key: localeKey),
+      const SizedBox(), // chat placeholder
       ProfileScreen(key: localeKey),
     ];
 
@@ -144,6 +131,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       HomeCustomerScreen(key: localeKey),
       DiscoverScreen(key: localeKey),
       PointsWalletScreen(key: localeKey),
+      const SizedBox(), // chat placeholder
       ProfileScreen(key: localeKey),
     ];
 

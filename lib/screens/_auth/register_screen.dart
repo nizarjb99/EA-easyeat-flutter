@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/styles.dart';
+import '../../widgets/easy_eat_logo.dart';
+import '../../widgets/language_selector.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -78,6 +81,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ),
           
+          const SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: LanguageSelector(),
+              ),
+            ),
+          ),
+          
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
@@ -94,37 +107,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 24),
                       
                       // Logo and Brand
-                      Center(
-                        child: Column(
-                          children: [
-                            const Text('🍽️', style: TextStyle(fontSize: 48)),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'EasyEat',
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF0F172A),
-                                letterSpacing: -1,
-                              ),
-                            ),
-                          ],
-                        ),
+                      const Center(
+                        child: EasyEatLogo(height: 90),
                       ),
                       const SizedBox(height: 32),
 
-                      const Text(
-                        'Crear nueva cuenta',
-                        style: TextStyle(
+                      Text(
+                        'auth.register_title'.tr(),
+                        style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w900,
                           color: Color(0xFF0F172A),
                           letterSpacing: -1,
                         ),
                       ),
-                      const Text(
-                        'Rellena tus datos y empieza a disfrutar',
-                        style: TextStyle(color: Color(0xFF64748B), fontSize: 16, fontWeight: FontWeight.w500),
+                      Text(
+                        'auth.register_subtitle'.tr(),
+                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 16, fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 40),
                       
@@ -146,23 +145,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           children: [
                             _buildTextField(
                               controller: _nameController,
-                              label: 'Nombre completo',
-                              placeholder: 'Ej. Juan Pérez',
+                              label: 'auth.name_label'.tr(),
+                              placeholder: 'auth.name_placeholder'.tr(),
                               icon: Icons.person_outline,
                             ),
                             const SizedBox(height: 24),
                             _buildTextField(
                               controller: _emailController,
-                              label: 'Correo electrónico',
-                              placeholder: 'tu@email.com',
+                              label: 'auth.email_label'.tr(),
+                              placeholder: 'auth.email_placeholder_reg'.tr(),
                               icon: Icons.mail_outline,
                               keyboardType: TextInputType.emailAddress,
                             ),
                             const SizedBox(height: 24),
                             _buildTextField(
                               controller: _passwordController,
-                              label: 'Contraseña',
-                              placeholder: '••••••••',
+                              label: 'auth.password_label'.tr(),
+                              placeholder: 'auth.password_placeholder'.tr(),
                               icon: Icons.lock_outline,
                               isPassword: true,
                               isVisible: _isPasswordVisible,
@@ -180,9 +179,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               child: Column(
                                 children: [
-                                  _buildRuleItem(_hasMinLength, 'Mínimo 8 caracteres de longitud'),
+                                  _buildRuleItem(_hasMinLength, 'auth.min_length_rule'.tr()),
                                   const SizedBox(height: 8),
-                                  _buildRuleItem(_hasUppercase, 'Incluye al menos una letra mayúscula'),
+                                  _buildRuleItem(_hasUppercase, 'auth.uppercase_rule'.tr()),
                                 ],
                               ),
                             ),
@@ -190,8 +189,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             const SizedBox(height: 24),
                             _buildTextField(
                               controller: _confirmPasswordController,
-                              label: 'Confirmar contraseña',
-                              placeholder: '••••••••',
+                              label: 'auth.confirm_password_label'.tr(),
+                              placeholder: 'auth.password_placeholder'.tr(),
                               icon: Icons.lock_outline,
                               isPassword: true,
                               isVisible: false, // Don't show for confirm
@@ -199,7 +198,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             
                             if (_confirmPasswordController.text.isNotEmpty) ...[
                                const SizedBox(height: 12),
-                               _buildRuleItem(_passwordsMatch, 'Las contraseñas coinciden perfectamente'),
+                               _buildRuleItem(_passwordsMatch, 'auth.passwords_match_rule'.tr()),
                             ],
                             
                             if (errorMessage.isNotEmpty) ...[
@@ -223,19 +222,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 onPressed: (authProvider.isLoading || !_isValid) ? null : _register,
                                 child: authProvider.isLoading
                                     ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                    : const Text('Finalizar Registro', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                    : Text('auth.register_button'.tr(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                               ),
                             ),
                             
                             const SizedBox(height: 24),
-                            const Row(
+                            Row(
                               children: [
-                                Expanded(child: Divider(color: Color(0xFFCBD5E1))),
+                                const Expanded(child: Divider(color: Color(0xFFCBD5E1))),
                                 Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 16),
-                                  child: Text('O', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  child: Text('auth.or'.tr(), style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
                                 ),
-                                Expanded(child: Divider(color: Color(0xFFCBD5E1))),
+                                const Expanded(child: Divider(color: Color(0xFFCBD5E1))),
                               ],
                             ),
                             const SizedBox(height: 24),
@@ -264,14 +263,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     }
                                   });
                                 },
-                                child: const Row(
+                                child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text('G', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.blue)),
-                                    SizedBox(width: 12),
+                                    const Text('G', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.blue)),
+                                    const SizedBox(width: 12),
                                     Text(
-                                      'Registrarse con Google',
-                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                      'auth.google_register'.tr(),
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                                     ),
                                   ],
                                 ),
@@ -286,10 +285,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text('¿Ya tienes cuenta?', style: TextStyle(color: Color(0xFF64748B))),
+                            Text('auth.already_have_account'.tr(), style: const TextStyle(color: Color(0xFF64748B))),
                             TextButton(
                               onPressed: () => Navigator.pop(context),
-                              child: const Text('Inicia sesión en su lugar', style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
+                              child: Text('auth.login_instead'.tr(), style: const TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
