@@ -11,6 +11,7 @@ import '../_employee/customer_qr_scanner_screen.dart';
 import '../../models/employeeStats.dart';
 import '../../widgets/language_dropdown_widget.dart';
 import '../../widgets/theme_toggle_widget.dart';
+import '../../widgets/easy_eat_logo.dart';
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const Color _orange = Color(0xFFFF7A1A);
@@ -284,12 +285,7 @@ class _HomeEmployeeScreenState extends State<HomeEmployeeScreen> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('🍽️', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 8),
-              Text(
-                'EasyEat',
-                style: TextStyle(color: textColor, fontWeight: FontWeight.w900),
-              ),
+              const EasyEatLogo(height: 50),
               const SizedBox(width: 8),
               _RoleBadge(role: role),
             ],
