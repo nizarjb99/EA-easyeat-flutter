@@ -61,9 +61,9 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
         context,
         '/exchange-reward',
         arguments: {
-          'customerId': json['customer_id'],
-          'rewardId': json['reward_id'],
-          'restaurantId': json['restaurant_id'],
+          'customerId': json['customer_id'] ?? json['userId'],
+          'rewardId': json['reward_id'] ?? json['rewardId'],
+          'restaurantId': json['restaurant_id'] ?? json['restaurantId'],
         },
       );
     }

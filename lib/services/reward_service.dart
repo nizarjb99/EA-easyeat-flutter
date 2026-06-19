@@ -7,10 +7,11 @@ import '../models/reward.dart';
 class RewardService {
   final String _baseUrl = '${AppConstants.baseUrl}/rewards';
 
-  Future<Map<String, String>> _headers(String? token) async {
+  Future<Map<String, String>> _headers(String? token, String? key) async {
     return {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
+      if (key != null) 'Idempotency-Key': key,
     };
   }
 
@@ -39,6 +40,7 @@ class RewardService {
     String rewardId,
     String employeeId,
     String token,
+    String key,
   ) async {
     final Map<String, dynamic> data = {
       'customer_id': customerId,
@@ -48,7 +50,7 @@ class RewardService {
 
     final response = await http.post(
       Uri.parse('${AppConstants.baseUrl}/rewardRedemptions/'),
-      headers: await _headers(token),
+      headers: await _headers(token, key),
       body: json.encode(data),
     );
 

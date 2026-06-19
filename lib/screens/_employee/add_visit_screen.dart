@@ -1,5 +1,8 @@
+import 'package:ea_easyeat_flutter/models/customer.dart';
+import 'package:ea_easyeat_flutter/services/customer_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../models/visit.dart';
 import '../../providers/auth_provider.dart';
@@ -21,8 +24,35 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
   final _formKey = GlobalKey<FormState>();
   final _billAmountController = TextEditingController();
   final VisitService _visitService = VisitService();
+  final CustomerService _customerService = CustomerService();
 
   bool _isSaving = false;
+  bool _isLoading = false;
+  String _customerName = '';
+  bool _hasFetchedCustomer = false;
+  String idempotencyKey = Uuid().v4();
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+    if (!_hasFetchedCustomer) {
+      final customerId = args?['customerId']?.toString();
+
+      if (customerId != null && customerId.isNotEmpty) {
+        _fetchCustomer(customerId).then((r) {
+          if (r != null && mounted) {
+            setState(() {
+              _customerName = r.name;
+            });
+          }
+        });
+      }
+      _hasFetchedCustomer = true;
+    }
+  }
 
   @override
   void dispose() {
@@ -107,6 +137,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
         restaurantId: restaurantId,
         employeeId: employeeId,
         billAmount: billAmount,
+        key: idempotencyKey,
       );
 
       if (!mounted) return;
@@ -119,6 +150,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
     } catch (e) {
       if (!mounted) return;
       _showError(e.toString().replaceAll('Exception: ', ''));
+      idempotencyKey = Uuid().v4();
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -136,12 +168,43 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
     );
   }
 
+  Future<Customer?> _fetchCustomer(String customerId) async {
+    final auth = context.read<AuthProvider>();
+    final token = auth.accessToken;
+
+    if (token == null) return null;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final customer = await _customerService.getCustomerById(
+        customerId,
+        token,
+      );
+
+      if (!mounted) return null;
+      return customer;
+    } catch (e) {
+      if (!mounted) return null;
+      _showError(e.toString().replaceAll('Exception: ', ''));
+      return null;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final customerId = (args?['customerId'] ?? '').toString();
-    final customerName = (args?['customerName'] ?? 'Customer').toString();
+    final customerName = _customerName.isEmpty
+        ? 'Loading customer name...'
+        : _customerName;
 
     return Scaffold(
       appBar: AppBar(
