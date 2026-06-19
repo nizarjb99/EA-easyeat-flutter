@@ -28,7 +28,8 @@ class AuthProvider extends ChangeNotifier {
 
   String? _accessToken;
   AuthAccountType _accountType = AuthAccountType.none;
-  bool _isLoading = true;
+  bool _isInitializing = true;
+  bool _isLoading = false;
   String _errorMessage = '';
 
   // ── Getters ────────────────────────────────────────────────────────────────
@@ -77,6 +78,7 @@ class AuthProvider extends ChangeNotifier {
     return null;
   }
 
+  bool get isInitializing => _isInitializing;
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
@@ -91,9 +93,9 @@ class AuthProvider extends ChangeNotifier {
 Future<bool> tryRestoreSession() async {
   // Idempotency guard: don't run while a restore is already in progress,
   // and don't run again if the session is already established.
-  if (!_isLoading && isLoggedIn) return true;
+  if (!_isInitializing && isLoggedIn) return true;
 
-  _isLoading = true;
+  _isInitializing = true;
   notifyListeners();
   try {
     final savedToken = await _authService.getAccessToken();
@@ -147,7 +149,7 @@ Future<bool> tryRestoreSession() async {
       return false;
     } 
     finally {
-    _isLoading = false;      // ← s'executa SEMPRE, sigui quin sigui el camí
+    _isInitializing = false;      // ← s'executa SEMPRE, sigui quin sigui el camí
     notifyListeners();
     }
   }

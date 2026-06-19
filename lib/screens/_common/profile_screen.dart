@@ -20,15 +20,21 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  @override
-  void initState() {
-    super.initState();
+@override
+void initState() {
+  super.initState();
 
-    Future.microtask(() {
+  Future.microtask(() async {
+    try {
       if (!mounted) return;
-      context.read<AuthProvider>().loadProfileFromApi();
-    });
-  }
+
+      await context.read<AuthProvider>().loadProfileFromApi();
+    } catch (e, s) {
+      debugPrint('PROFILE LOAD ERROR: $e');
+      debugPrint('$s');
+    }
+  });
+}
 
   Future<void> _refreshProfile() async {
     await context.read<AuthProvider>().loadProfileFromApi();
@@ -66,6 +72,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+
+    debugPrint('Building ProfileScreen');
+    debugPrint('Role: ${authProvider.role}');
+    debugPrint('Restaurant: ${authProvider.restaurant}');
+    debugPrint('isEmployee: ${authProvider.isEmployee}');
+    debugPrint('isLoggedIn: ${authProvider.isLoggedIn}');
+    
     final isLoading = authProvider.isLoading;
     final errorMessage = authProvider.errorMessage;
     final accentColor = _accentColor(authProvider);
@@ -73,11 +86,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final String displayName = authProvider.displayName;
     final String? email = authProvider.email;
     final restaurantData = authProvider.restaurant;
-    final String? restaurantName =
-        restaurantData?['profile']?['name'] ?? restaurantData?['name'];
 
-    final roleKey = authProvider.role ?? (authProvider.isCustomer ? 'customer' : 'staff');
-    final roleLabel = 'dashboard.roles.$roleKey'.tr();
+    String? restaurantName;
+    try {
+      restaurantName =
+      restaurantData?['profile']?['name'] ??
+      restaurantData?['name'];
+    } catch (e) {
+      debugPrint('RESTAURANT ERROR: $e');
+    }
+
+    final roleKey = authProvider.role?.toLowerCase() ??
+    (authProvider.isCustomer ? 'customer' : 'employee');
+    
+    String roleLabel;
+    try {
+      roleLabel = 'dashboard.roles.$roleKey'.tr();
+    } 
+    catch (_) {
+      roleLabel = roleKey;
+    }
+    
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = isDark ? AppColors.dashboardBg : const Color(0xFFF8FAFC);
     final surfaceColor = isDark ? AppColors.dashboardHeader : _profileSurface;

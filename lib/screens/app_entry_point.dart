@@ -13,9 +13,9 @@ class DashboardRouterScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
 
-    // tryRestoreSession() is started in main() before runApp, so _isLoading
+    // tryRestoreSession() is started in main() before runApp, so _isInitializing
     // is already true on frame 1 — LoadingSplash shows with no blank flash.
-    if (auth.isLoading) {
+    if (auth.isInitializing) {
       return const LoadingSplash();
     }
 
