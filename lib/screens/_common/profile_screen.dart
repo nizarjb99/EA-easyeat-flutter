@@ -79,14 +79,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final roleKey = authProvider.role ?? (authProvider.isCustomer ? 'customer' : 'staff');
     final roleLabel = 'dashboard.roles.$roleKey'.tr();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? AppColors.dashboardBg : const Color(0xFFF8FAFC);
-    final surfaceColor = isDark ? AppColors.dashboardHeader : _profileSurface;
     final titleColor = isDark ? AppColors.text : _profileDark;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: surfaceColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,

@@ -13,6 +13,7 @@ import '../../utils/styles.dart';
 import '../../services/fcm_service.dart';
 import '../../services/notification_router.dart';
 import '../../providers/notification_provider.dart';
+import '../_common/accessibility/accessibility_controller.dart';
 
 // ─── Color Palette ──────────────────────────────────────────────────────────
 const Color _orange = Color(0xFFFF7A1A);
@@ -115,11 +116,12 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
     final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
     final textColor = isDark ? AppColors.text : _dark;
     final mutedColor = isDark ? AppColors.textMuted : _grey;
-
+    final a11y = context.watch<AccessibilityController>();
+    
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: surfaceColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         title: FittedBox(
           fit: BoxFit.scaleDown,
@@ -130,7 +132,13 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
               const SizedBox(width: 8),
               Text(
                 'EasyEat',
-                style: TextStyle(color: textColor, fontWeight: FontWeight.w900),
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: a11y.textColor,
+                  letterSpacing: a11y.letterSpacing,
+                  height: a11y.lineHeight,
+                  fontFamily: a11y.fontFamilyName,
+                ),
               ),
             ],
           ),
