@@ -198,6 +198,53 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                             ),
                           ),
+                          
+                          const SizedBox(height: 24),
+                          const Row(
+                            children: [
+                              Expanded(child: Divider(color: Color(0xFFCBD5E1))),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16),
+                                child: Text('O', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                              ),
+                              Expanded(child: Divider(color: Color(0xFFCBD5E1))),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF0F172A),
+                                side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              onPressed: isLoading ? null : () {
+                                context.read<AuthProvider>().loginWithGoogle(
+                                  role: _loginType == 'customer' ? 'customer' : 'employee',
+                                ).then((success) {
+                                  if (success && mounted) {
+                                    Navigator.pushReplacementNamed(context, '/dashboard');
+                                  }
+                                });
+                              },
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text('G', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.blue)),
+                                  SizedBox(width: 12),
+                                  Text(
+                                    'Continuar con Google',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
