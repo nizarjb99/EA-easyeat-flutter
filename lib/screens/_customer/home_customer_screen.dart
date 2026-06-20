@@ -223,6 +223,8 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
             const _QuickActions(),
             const SizedBox(height: 28),
             TextField(
+              readOnly: true,
+              onTap: () => Navigator.pushNamed(context, '/search'),
               decoration: InputDecoration(
                 hintText: 'customer.search_hint'.tr(),
                 prefixIcon: Icon(Icons.search, color: mutedColor),

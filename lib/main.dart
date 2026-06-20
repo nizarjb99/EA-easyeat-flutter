@@ -23,6 +23,7 @@ import 'screens/_employee/add_visit_screen.dart';
 import 'screens/_employee/exchange_confirmation_screen.dart';
 import 'screens/_employee/exchange_reward_screen.dart';
 import 'screens/_employee/visit_confirmation_screen.dart';
+import 'screens/_customer/restaurant_search_screen.dart';
 import 'services/fcm_service.dart' show firebaseMessagingBackgroundHandler;
 import 'utils/styles.dart';
 
@@ -114,6 +115,7 @@ class EventManagerApp extends StatelessWidget {
         '/aviso-legal': (context) => const LegalNoticePage(),
         '/exchange-reward': (context) => const ExchangeRewardScreen(),
         '/exchange-confirmation': (context) => const ExchangeConfirmationScreen(),
+        '/search': (context) => const RestaurantSearchScreen(),
       },
     );
   }
