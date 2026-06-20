@@ -126,27 +126,7 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
         elevation: 0,
         title: const FittedBox(
           fit: BoxFit.scaleDown,
-<<<<<<< HEAD
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('🍽️', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 8),
-              Text(
-                'EasyEat',
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  color: a11y.textColor,
-                  letterSpacing: a11y.letterSpacing,
-                  height: a11y.lineHeight,
-                  fontFamily: a11y.fontFamilyName,
-                ),
-              ),
-            ],
-          ),
-=======
           child: EasyEatLogo(height: 50),
->>>>>>> 69ea9661a40a262ca9e52c38bee42070f74edd31
         ),
         actions: [
           const ThemeToggleWidget(),

@@ -84,6 +84,11 @@ class _RestaurantSearchScreenState extends State<RestaurantSearchScreen> {
     _performSearch();
   }
 
+  String _tr(String key, String fallback) {
+    final val = key.tr();
+    return val == key ? fallback : val;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -104,7 +109,7 @@ class _RestaurantSearchScreenState extends State<RestaurantSearchScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'customer.search_title'.tr(defaultValue: 'Cercar Restaurants'),
+          _tr('customer.search_title', 'Cercar Restaurants'),
           style: TextStyle(
             color: textColor,
             fontWeight: FontWeight.w900,
@@ -154,7 +159,7 @@ class _RestaurantSearchScreenState extends State<RestaurantSearchScreen> {
                   controller: _searchController,
                   style: TextStyle(color: textColor, fontFamily: a11y.fontFamilyName),
                   decoration: InputDecoration(
-                    hintText: 'customer.search_hint'.tr(defaultValue: 'Cerca per nom, cuina, ciutat...'),
+                    hintText: _tr('customer.search_hint', 'Cerca per nom, cuina, ciutat...'),
                     hintStyle: TextStyle(color: mutedColor),
                     prefixIcon: Icon(Icons.search_rounded, color: _orange),
                     suffixIcon: _searchController.text.isNotEmpty
@@ -327,7 +332,7 @@ class _RestaurantSearchScreenState extends State<RestaurantSearchScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'customer.no_restaurants'.tr(defaultValue: 'No s\'ha trobat cap restaurant'),
+              _tr('customer.no_restaurants', 'No s\'ha trobat cap restaurant'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 20,
