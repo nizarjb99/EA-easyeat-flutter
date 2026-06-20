@@ -47,6 +47,7 @@ dependencies:
   firebase_messaging: ^16.3.0
   flutter_local_notifications: ^22.0.0
   url_launcher: ^6.3.0
+  nfc_manager: ^3.3.0
 
 dev_dependencies:
   flutter_test:
