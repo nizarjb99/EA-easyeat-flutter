@@ -171,6 +171,87 @@ class AuthService {
   }
 
   // ──────────────────────────────────────────────────────────────────────────
+  // Google Auth
+  // ──────────────────────────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>> loginWithGoogle(
+      String idToken, {
+        String role = 'employee',
+      }) async {
+    late http.Response response;
+
+    try {
+      response = await http.post(
+        Uri.parse('${AppConstants.baseUrl}/auth/login/google'),
+        headers: const <String, String>{'Content-Type': 'application/json'},
+        body: json.encode({
+          'idToken': idToken,
+          'role': role,
+        }),
+      );
+    } catch (e) {
+      throw Exception('Error connecting to the server: $e');
+    }
+
+    if (response.statusCode != 200) {
+      final body = _tryDecode(response.body);
+      throw Exception(body?['message'] ?? 'Google authentication error');
+    }
+
+    final Map<String, dynamic> responseBody =
+    json.decode(response.body) as Map<String, dynamic>;
+
+    final token =
+    (responseBody['accessToken'] ?? responseBody['token'])?.toString();
+
+    final rawUser = responseBody['customer'] ??
+        responseBody['employee'] ??
+        responseBody['admin'] ??
+        responseBody['user'] ??
+        responseBody['usuario'];
+
+    String? userId;
+    if (responseBody['userId'] != null) {
+      userId = responseBody['userId'].toString();
+    } else if (rawUser is Map<String, dynamic>) {
+      userId = (rawUser['_id'] ?? rawUser['id'])?.toString();
+    }
+
+    if (token == null || token.isEmpty) {
+      throw Exception('Unexpected server response: missing access token');
+    }
+    if (userId == null || userId.isEmpty) {
+      throw Exception('Unexpected server response: missing user id');
+    }
+
+    await _persistSession(token: token, userId: userId, role: role);
+
+    return responseBody;
+  }
+
+  Future<Map<String, dynamic>> registerWithGoogle(String idToken) async {
+    late http.Response response;
+    try {
+      response = await http.post(
+        Uri.parse('${AppConstants.baseUrl}/auth/register/google'),
+        headers: const <String, String>{'Content-Type': 'application/json'},
+        body: json.encode({
+          'idToken': idToken,
+        }),
+      );
+    } catch (e) {
+      throw Exception('Error connecting to the server: $e');
+    }
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return json.decode(response.body) as Map<String, dynamic>;
+    }
+
+    final body = _tryDecode(response.body);
+    throw Exception(body?['message'] ?? 'Error registering user with Google');
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
   // User-profile fetchers
   // ──────────────────────────────────────────────────────────────────────────
 

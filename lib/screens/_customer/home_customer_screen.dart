@@ -7,10 +7,14 @@ import '../../providers/auth_provider.dart';
 import '../../services/customer_service.dart';
 import '../../models/customerStats.dart';
 import '../../widgets/language_dropdown_widget.dart';
+import '../../widgets/theme_toggle_widget.dart';
+import '../../widgets/easy_eat_logo.dart';
+import '../../utils/styles.dart';
 
 import '../../services/fcm_service.dart';
 import '../../services/notification_router.dart';
 import '../../providers/notification_provider.dart';
+import '../_common/accessibility/accessibility_controller.dart';
 
 // ─── Color Palette ──────────────────────────────────────────────────────────
 const Color _orange = Color(0xFFFF7A1A);
@@ -108,35 +112,32 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final stats = _customerStats;
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? AppColors.dashboardBg : const Color(0xFFFFFBF7);
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final textColor = isDark ? AppColors.text : _dark;
+    final mutedColor = isDark ? AppColors.textMuted : _grey;
+    final a11y = context.watch<AccessibilityController>();
+    
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBF7),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        title: FittedBox(
+        title: const FittedBox(
           fit: BoxFit.scaleDown,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('🍽️', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 8),
-              Text(
-                'EasyEat',
-                style: TextStyle(color: _dark, fontWeight: FontWeight.w900),
-              ),
-            ],
-          ),
+          child: EasyEatLogo(height: 50),
         ),
         actions: [
-          LanguageDropdownWidget(),
+          const ThemeToggleWidget(),
+          const LanguageDropdownWidget(),
           if (MediaQuery.of(context).size.width >= 600)
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: Center(
                 child: Text(
                   auth.displayName.split(' ').first,
-                  style: const TextStyle(color: _dark, fontWeight: FontWeight.w700),
+                  style: TextStyle(color: textColor, fontWeight: FontWeight.w700),
                 ),
               ),
             ),
@@ -146,7 +147,7 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
               auth.logout();
               Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
             },
-            icon: const Icon(Icons.logout, color: _dark),
+            icon: Icon(Icons.logout, color: textColor),
           ),
           const SizedBox(width: 4),
         ],
@@ -222,11 +223,13 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
             const _QuickActions(),
             const SizedBox(height: 28),
             TextField(
+              readOnly: true,
+              onTap: () => Navigator.pushNamed(context, '/search'),
               decoration: InputDecoration(
                 hintText: 'customer.search_hint'.tr(),
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: Icon(Icons.search, color: mutedColor),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: surfaceColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(18),
                   borderSide: BorderSide.none,
@@ -236,7 +239,7 @@ class _HomeCustomerScreenState extends State<HomeCustomerScreen> {
             const SizedBox(height: 32),
             Text(
               'customer.recommended'.tr(),
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: _dark),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: textColor),
             ),
             const SizedBox(height: 16),
             _EmptyCard(
@@ -289,13 +292,20 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final textColor = isDark ? AppColors.text : _dark;
+    final mutedColor = isDark ? AppColors.textMuted : _grey;
+
     return Container(
       constraints: const BoxConstraints(minHeight: 125),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(22),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 18, offset: const Offset(0, 8))],
+        boxShadow: isDark
+            ? []
+            : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 18, offset: const Offset(0, 8))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,11 +314,11 @@ class _StatCard extends StatelessWidget {
           Icon(icon, color: color, size: 28),
           Text(
             value,
-            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: _dark),
+            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: textColor),
           ),
           Text(
             label,
-            style: const TextStyle(color: _grey, fontWeight: FontWeight.w600, fontSize: 12),
+            style: TextStyle(color: mutedColor, fontWeight: FontWeight.w600, fontSize: 12),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -358,13 +368,19 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final borderColor = isDark ? AppColors.glassBorder : const Color(0xFFE2E8F0);
+    final textColor = isDark ? AppColors.text : _dark;
+    final mutedColor = isDark ? AppColors.textMuted : _grey;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: surfaceColor,
           borderRadius: BorderRadius.circular(20),
            boxShadow: [
              BoxShadow(
@@ -373,7 +389,7 @@ class _ActionButton extends StatelessWidget {
                offset: const Offset(0, 6),
              ),
            ],
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(color: borderColor),
         ),
         child: Row(
           children: [
@@ -393,18 +409,18 @@ class _ActionButton extends StatelessWidget {
                 children: [
                    Text(
                      label,
-                     style: const TextStyle(
+                     style: TextStyle(
                        fontSize: 15,
                        fontWeight: FontWeight.w900,
-                       color: _dark,
+                       color: textColor,
                      ),
                    ),
                    const SizedBox(height: 2),
                    Text(
                      sublabel,
-                     style: const TextStyle(
+                     style: TextStyle(
                        fontSize: 12,
-                       color: _grey,
+                       color: mutedColor,
                        fontWeight: FontWeight.w500,
                      ),
                    ),
@@ -428,20 +444,25 @@ class _EmptyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final textColor = isDark ? AppColors.text : _dark;
+    final mutedColor = isDark ? AppColors.textMuted : _grey;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+      decoration: BoxDecoration(color: surfaceColor, borderRadius: BorderRadius.circular(24)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, color: _grey, size: 48),
+          Icon(icon, color: mutedColor, size: 48),
           const SizedBox(height: 16),
           Text(
             title,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: _dark,
+                  color: textColor,
                   fontWeight: FontWeight.w900,
                 ),
           ),
@@ -450,7 +471,7 @@ class _EmptyCard extends StatelessWidget {
             subtitle,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: _grey,
+                  color: mutedColor,
                 ),
           ),
         ],

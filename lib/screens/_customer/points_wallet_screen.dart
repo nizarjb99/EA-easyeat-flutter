@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
-
+import '../_common/accessibility/accessibility_controller.dart';
 import '../../models/pointsWallet.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/customer_service.dart';
 import '../../services/restaurant_service.dart';
 import '../_common/restaurant_detail_screen.dart';
+import '../../utils/styles.dart';
 
 class PointsWalletScreen extends StatefulWidget {
   const PointsWalletScreen({super.key});
@@ -31,7 +32,8 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
     });
   }
 
-  int get _totalPoints => _wallets.fold<int>(0, (sum, wallet) => sum + wallet.points);
+  int get _totalPoints =>
+      _wallets.fold<int>(0, (sum, wallet) => sum + wallet.points);
 
   DateTime? get _lastUpdate {
     final dates = _wallets
@@ -64,7 +66,11 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open restaurant: ${e.toString().replaceAll('Exception: ', '')}')),
+        SnackBar(
+          content: Text(
+            'Could not open restaurant: ${e.toString().replaceAll('Exception: ', '')}',
+          ),
+        ),
       );
     }
   }
@@ -94,10 +100,9 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
         limit: 100,
       );
 
-      final items = _extractWalletItems(response)
-          .whereType<Map<String, dynamic>>()
-          .map(PointsWallet.fromJson)
-          .toList();
+      final items = _extractWalletItems(
+        response,
+      ).whereType<Map<String, dynamic>>().map(PointsWallet.fromJson).toList();
 
       if (!mounted) return;
       setState(() {
@@ -117,7 +122,14 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
     if (response is List) return response;
 
     if (response is Map<String, dynamic>) {
-      for (final key in const ['data', 'pointsWallet', 'wallets', 'items', 'docs', 'results']) {
+      for (final key in const [
+        'data',
+        'pointsWallet',
+        'wallets',
+        'items',
+        'docs',
+        'results',
+      ]) {
         final candidate = response[key];
         if (candidate is List) return candidate;
       }
@@ -150,24 +162,34 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark
+        ? AppColors.dashboardBg
+        : const Color(0xFFFFFBF7);
+    final surfaceColor = isDark ? AppColors.dashboardHeader : Colors.white;
+    final textColor = isDark ? AppColors.text : const Color(0xFF0F172A);
+    final a11y = context.watch<AccessibilityController>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBF7),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         title: Text(
           'wallet.title'.tr(),
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w900,
-            color: Color(0xFF0F172A),
+            color: a11y.textColor,
+            letterSpacing: a11y.letterSpacing,
+            height: a11y.lineHeight,
+            fontFamily: a11y.fontFamilyName,
           ),
         ),
         actions: [
           IconButton(
             onPressed: _loadWallet,
-            icon: const Icon(Icons.refresh, color: Color(0xFF0F172A)),
+            icon: Icon(Icons.refresh, color: textColor),
             tooltip: 'wallet.refresh'.tr(),
           ),
         ],
@@ -227,6 +249,9 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
       );
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.text : const Color(0xFF0F172A);
+
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(24),
@@ -240,10 +265,10 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
         const SizedBox(height: 20),
         Text(
           'wallet.entries_title'.tr(),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w900,
-            color: Color(0xFF0F172A),
+            color: textColor,
           ),
         ),
         const SizedBox(height: 12),
@@ -252,7 +277,8 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
             padding: const EdgeInsets.only(bottom: 12),
             child: _WalletTile(
               wallet: wallet,
-              restaurantLabel: wallet.restaurant.name ??
+              restaurantLabel:
+                  wallet.restaurant.name ??
                   'Restaurant ${_shortId(wallet.restaurant.id)}',
               cityLabel: wallet.restaurant.city,
               dateLabel: _formatDate(wallet.updatedAt ?? wallet.createdAt),
@@ -266,9 +292,6 @@ class _PointsWalletScreenState extends State<PointsWalletScreen> {
     );
   }
 }
-
-
-
 
 class _SummaryCard extends StatelessWidget {
   final String customerName;
@@ -437,21 +460,32 @@ class _WalletTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final borderColor = isDark
+        ? AppColors.glassBorder
+        : const Color(0xFFE2E8F0);
+    final textColor = isDark ? AppColors.text : const Color(0xFF0F172A);
+    final mutedColor = isDark ? AppColors.textMuted : const Color(0xFF64748B);
+    final subtleColor = isDark ? AppColors.textMuted : const Color(0xFF94A3B8);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: surfaceColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          border: Border.all(color: borderColor),
+          boxShadow: isDark
+              ? []
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
         ),
         child: Row(
           children: [
@@ -474,19 +508,19 @@ class _WalletTile extends StatelessWidget {
                 children: [
                   Text(
                     restaurantLabel,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
+                      color: textColor,
                     ),
                   ),
                   if (cityLabel != null && cityLabel!.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
                       cityLabel!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF64748B),
+                        color: mutedColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -494,18 +528,12 @@ class _WalletTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     'wallet.updated_at'.tr(args: [dateLabel]),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF94A3B8),
-                    ),
+                    style: TextStyle(fontSize: 12, color: subtleColor),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     'wallet.wallet_id'.tr(args: [_shortId(wallet.id)]),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF94A3B8),
-                    ),
+                    style: TextStyle(fontSize: 12, color: subtleColor),
                   ),
                 ],
               ),
@@ -523,9 +551,9 @@ class _WalletTile extends StatelessWidget {
                 ),
                 Text(
                   'wallet.points_unit'.tr(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF64748B),
+                    color: mutedColor,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -563,13 +591,21 @@ class _StateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final borderColor = isDark
+        ? AppColors.glassBorder
+        : const Color(0xFFE2E8F0);
+    final textColor = isDark ? AppColors.text : const Color(0xFF0F172A);
+    final mutedColor = isDark ? AppColors.textMuted : const Color(0xFF64748B);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         children: [
@@ -578,21 +614,17 @@ class _StateCard extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w900,
-              color: Color(0xFF0F172A),
+              color: textColor,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF64748B),
-              height: 1.4,
-            ),
+            style: TextStyle(fontSize: 14, color: mutedColor, height: 1.4),
           ),
           const SizedBox(height: 18),
           SizedBox(
@@ -624,26 +656,33 @@ class _InfoBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark
+        ? const Color(0xFF2A1A12)
+        : const Color(0xFFFFF7ED);
+    final borderColor = isDark
+        ? const Color(0xFF7C2D12)
+        : const Color(0xFFFFD8B0);
+    final textColor = isDark
+        ? const Color(0xFFFED7AA)
+        : const Color(0xFF9A3412);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF7ED),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFFFD8B0)),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline, color: Color(0xFFFF7A1A)),
+          const Icon(Icons.info_outline, color: Color(0xFFFF7A1A)),
           SizedBox(width: 12),
           Expanded(
             child: Text(
               'wallet.info_banner'.tr(),
-              style: const TextStyle(
-                color: Color(0xFF9A3412),
-                fontSize: 13,
-                height: 1.4,
-              ),
+              style: TextStyle(color: textColor, fontSize: 13, height: 1.4),
             ),
           ),
         ],

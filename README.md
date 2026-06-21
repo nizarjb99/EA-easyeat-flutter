@@ -2,6 +2,8 @@
 
 # 🍽️ EasyEat — Flutter App
 
+holaaa
+
 **A modern restaurant loyalty & management platform built with Flutter**
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)

@@ -6,7 +6,9 @@ import 'package:ea_easyeat_flutter/services/restaurant_service.dart';
 import 'package:ea_easyeat_flutter/screens/_common/restaurant_detail_screen.dart';
 import 'package:ea_easyeat_flutter/screens/_common/map_screen.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:ea_easyeat_flutter/screens/_common/popup_assistant_screen.dart';
 import '../../widgets/language_dropdown_widget.dart';
+import '../../widgets/theme_toggle_widget.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
@@ -37,12 +39,14 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   void _filterRestaurants() {
     setState(() {
       _filteredRestaurants = _restaurants.where((restaurant) {
-        final matchesName = restaurant.profile.name
-            .toLowerCase()
-            .contains(_searchQuery.toLowerCase());
-        final matchesCity = _selectedCity == null ||
+        final matchesName = restaurant.profile.name.toLowerCase().contains(
+          _searchQuery.toLowerCase(),
+        );
+        final matchesCity =
+            _selectedCity == null ||
             restaurant.profile.location.city == _selectedCity;
-        final matchesCategory = _selectedCategory == null ||
+        final matchesCategory =
+            _selectedCategory == null ||
             restaurant.profile.category.contains(_selectedCategory);
 
         return matchesName && matchesCity && matchesCategory;
@@ -50,7 +54,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     });
   }
 
-  String _calculateDistance(Restaurant restaurant){
+  String _calculateDistance(Restaurant restaurant) {
     if (_userLocation == null) return "-- km";
     final coords = restaurant.profile.location.coordinates.coordinates;
     final distance = Geolocator.distanceBetween(
@@ -72,8 +76,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         _availableCities = _restaurants
             .map((r) => r.profile.location.city)
             .toSet();
-        _availableCategories = _restaurants
-            .fold<Set<String>>({}, (set, r) => set..addAll(r.profile.category));
+        _availableCategories = _restaurants.fold<Set<String>>(
+          {},
+          (set, r) => set..addAll(r.profile.category),
+        );
         _filterRestaurants();
       });
     } catch (e) {
@@ -91,127 +97,164 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         title: Text('discover.title'.tr()),
         centerTitle: true,
         actions: [
-          LanguageDropdownWidget(),
+          const ThemeToggleWidget(),
+          const LanguageDropdownWidget(),
           IconButton(
             icon: const Icon(Icons.map),
             tooltip: 'discover.open_map'.tr(),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => MapScreen( ),
-                ),
+                MaterialPageRoute(builder: (_) => MapScreen()),
               );
             },
           ),
-        ]
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? Center(child: Text(_errorMessage!))
-              : Column(
-                  children: [
-                    // Search Bar
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: TextField(
-                        onChanged: (value) {
-                          _searchQuery = value;
-                          _filterRestaurants();
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'discover.search_by_name'.tr(),
-                          prefixIcon: const Icon(Icons.search),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.0),
+          ? Center(child: Text(_errorMessage!))
+          : Column(
+              children: [
+                // Search Bar
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          onChanged: (value) {
+                            _searchQuery = value;
+                            _filterRestaurants();
+                          },
+                          decoration: InputDecoration(
+                            hintText: 'discover.search_by_name'.tr(),
+                            prefixIcon: const Icon(Icons.search),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    // Filter Dropdowns Row
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Row(
-                          children: [
-                            // City Filter
-                            DropdownButton<String?>(
-                              value: _selectedCity,
-                              hint: Text('discover.all_cities'.tr()),
-                              onChanged: (value) {
-                                setState(() => _selectedCity = value);
-                                _filterRestaurants();
-                              },
-                              items: [
-                                DropdownMenuItem(
-                                  value: null,
-                                  child: Text('discover.all_cities'.tr()),
-                                ),
-                                ..._availableCities.map((city) =>
-                                    DropdownMenuItem(
-                                      value: city,
-                                      child: Text(city),
-                                    )),
-                              ],
+                      const SizedBox(width: 12),
+                      Container(
+                        height: 56,
+                        width: 56,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFE9D9),
+                          borderRadius: BorderRadius.circular(8.0),
+                          border: Border.all(
+                            color: const Color(0xFFFF7A1A).withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.smart_toy_rounded,
+                            color: Color(0xFFFF7A1A),
+                            size: 28,
+                          ),
+                          tooltip: 'assistant.title'.tr(),
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) => const PopupAssistantScreen(),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Filter Dropdowns Row
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Row(
+                      children: [
+                        // City Filter
+                        DropdownButton<String?>(
+                          value: _selectedCity,
+                          hint: Text('discover.all_cities'.tr()),
+                          onChanged: (value) {
+                            setState(() => _selectedCity = value);
+                            _filterRestaurants();
+                          },
+                          items: [
+                            DropdownMenuItem(
+                              value: null,
+                              child: Text('discover.all_cities'.tr()),
                             ),
-                            const SizedBox(width: 16),
-                            // Category Filter
-                            DropdownButton<String?>(
-                              value: _selectedCategory,
-                              hint: Text('discover.all_categories'.tr()),
-                              onChanged: (value) {
-                                setState(() => _selectedCategory = value);
-                                _filterRestaurants();
-                              },
-                              items: [
-                                DropdownMenuItem(
-                                  value: null,
-                                  child: Text('discover.all_categories'.tr()),
-                                ),
-                                ..._availableCategories.map((category) =>
-                                    DropdownMenuItem(
-                                      value: category,
-                                      child: Text(category),
-                                    )),
-                              ],
+                            ..._availableCities.map(
+                              (city) => DropdownMenuItem(
+                                value: city,
+                                child: Text(city),
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                    ),
-                    // Results ListView
-                    Expanded(
-                      child: _filteredRestaurants.isEmpty
-                          ? Center(
-                              child: Text('discover.no_results'.tr()))
-                          : ListView.builder(
-                              padding: const EdgeInsets.all(16.0),
-                              itemCount: _filteredRestaurants.length,
-                              itemBuilder: (context, index) {
-                                final restaurant = _filteredRestaurants[index];
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 16.0),
-                                  child: RestaurantCard(
-                                      restaurant: restaurant,
-                                      distance: _calculateDistance(restaurant),
-                                      onClick: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                RestaurantDetailScreen(restaurant: restaurant),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                );
-                              },
+                        const SizedBox(width: 16),
+                        // Category Filter
+                        DropdownButton<String?>(
+                          value: _selectedCategory,
+                          hint: Text('discover.all_categories'.tr()),
+                          onChanged: (value) {
+                            setState(() => _selectedCategory = value);
+                            _filterRestaurants();
+                          },
+                          items: [
+                            DropdownMenuItem(
+                              value: null,
+                              child: Text('discover.all_categories'.tr()),
                             ),
+                            ..._availableCategories.map(
+                              (category) => DropdownMenuItem(
+                                value: category,
+                                child: Text(category),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
+                // Results ListView
+                Expanded(
+                  child: _filteredRestaurants.isEmpty
+                      ? Center(child: Text('discover.no_results'.tr()))
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16.0),
+                          itemCount: _filteredRestaurants.length,
+                          itemBuilder: (context, index) {
+                            final restaurant = _filteredRestaurants[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: RestaurantCard(
+                                restaurant: restaurant,
+                                distance: _calculateDistance(restaurant),
+                                onClick: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          RestaurantDetailScreen(
+                                            restaurant: restaurant,
+                                          ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
     );
   }
-}
+}

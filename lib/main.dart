@@ -11,17 +11,20 @@ import 'providers/location_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/restaurant_provider.dart';
 import 'providers/google_wallet_provider.dart';
+import 'providers/theme_provider.dart';
 
-import 'screens/_auth/landing_screen.dart';
 import 'screens/_auth/legal_notice_screen.dart';
+import 'screens/_common/accessibility/accessibility_controller.dart';
 import 'screens/_auth/login_screen.dart';
 import 'screens/_auth/register_screen.dart';
 import 'screens/_common/notification_screen.dart';
 import 'screens/app_entry_point.dart';
+import 'screens/loading_splash.dart';
 import 'screens/_employee/add_visit_screen.dart';
 import 'screens/_employee/exchange_confirmation_screen.dart';
 import 'screens/_employee/exchange_reward_screen.dart';
 import 'screens/_employee/visit_confirmation_screen.dart';
+import 'screens/_customer/restaurant_search_screen.dart';
 import 'services/fcm_service.dart' show firebaseMessagingBackgroundHandler;
 import 'utils/styles.dart';
 
@@ -41,11 +44,16 @@ Future<void> main() async {
   final locationProvider = LocationProvider();
   await locationProvider.initialize();
 
-  // Restore saved session (if any) before building the widget tree.
-  // tryRestoreSession() also initialises FCM when it finds a valid customer
-  // session, so push notifications are ready before the first frame is drawn.
+  // Pre-create AuthProvider and kick off session restore BEFORE runApp.
+  // This ensures _isLoading is already true on the very first frame, so
+  // DashboardRouterScreen immediately renders LoadingSplash — no blank flash.
+  // tryRestoreSession() runs concurrently while the widget tree builds.
   final authProvider = AuthProvider();
-  await authProvider.tryRestoreSession();
+  authProvider.tryRestoreSession(); // intentionally not awaited
+
+  // Load saved accessibility settings before the first frame.
+  final accessibilityController = AccessibilityController();
+  await accessibilityController.loadFromPrefs();
 
   runApp(
     EasyLocalization(
@@ -54,11 +62,14 @@ Future<void> main() async {
       fallbackLocale: const Locale('en'),
       child: MultiProvider(
         providers: [
+          // Hand the pre-created instance to the provider tree so the
+          // in-flight tryRestoreSession() notifies the correct listeners.
           ChangeNotifierProvider(create: (_) => authProvider),
           ChangeNotifierProvider(create: (_) => RestaurantProvider()),
           ChangeNotifierProvider(create: (_) => ChatProvider()),
           ChangeNotifierProvider(create: (_) => locationProvider),
           ChangeNotifierProvider(create: (_) => GoogleWalletProvider()),
+          ChangeNotifierProvider(create: (_) => ThemeProvider()),
 
           ChangeNotifierProxyProvider<AuthProvider, NotificationProvider>(
             create: (_) => NotificationProvider(),
@@ -66,6 +77,9 @@ Future<void> main() async {
               notificationProvider!.bindAuth(auth);
               return notificationProvider;
             },
+          ),
+          ChangeNotifierProvider<AccessibilityController>(
+            create: (_) => accessibilityController,
           ),
         ],
         child: const EventManagerApp(),
@@ -79,19 +93,21 @@ class EventManagerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'EasyEat',
       theme: AppStyles.lightTheme,
       darkTheme: AppStyles.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: themeProvider.themeMode,
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
-      // LandingScreen is the correct unauthenticated entry point.
+
       initialRoute: '/',
       routes: {
-        '/': (context) => const HomePage(),
+        '/': (context) => const DashboardRouterScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/dashboard': (context) => const DashboardRouterScreen(),
@@ -101,6 +117,7 @@ class EventManagerApp extends StatelessWidget {
         '/aviso-legal': (context) => const LegalNoticePage(),
         '/exchange-reward': (context) => const ExchangeRewardScreen(),
         '/exchange-confirmation': (context) => const ExchangeConfirmationScreen(),
+        '/search': (context) => const RestaurantSearchScreen(),
       },
     );
   }

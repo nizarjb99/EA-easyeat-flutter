@@ -2,6 +2,7 @@ import 'package:ea_easyeat_flutter/models/customer.dart';
 import 'package:ea_easyeat_flutter/services/customer_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../models/reward.dart';
 import '../../providers/auth_provider.dart';
@@ -30,6 +31,7 @@ class _ExchangeRewardScreenState extends State<ExchangeRewardScreen> {
   bool _hasFetchedReward = false;
   String _customerName = '';
   bool _hasFetchedCustomer = false;
+  String idempotencyKey = Uuid().v4();
 
   @override
   void didChangeDependencies() {
@@ -85,8 +87,9 @@ class _ExchangeRewardScreenState extends State<ExchangeRewardScreen> {
       _showError('Employee not authenticated');
       return;
     }
+
     if (auth.currentEmployee?.restaurantId != restaurant_id) {
-      _showError('Reward not from the same restaurant');
+      _showError('Reward not from the same restaurant.');
       return;
     }
 
@@ -105,6 +108,7 @@ class _ExchangeRewardScreenState extends State<ExchangeRewardScreen> {
         reward_id,
         employeeId,
         token,
+        idempotencyKey,
       );
 
       if (!mounted) return;
@@ -117,6 +121,7 @@ class _ExchangeRewardScreenState extends State<ExchangeRewardScreen> {
     } catch (e) {
       if (!mounted) return;
       _showError(e.toString().replaceAll('Exception: ', ''));
+      idempotencyKey = Uuid().v4();
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);

@@ -14,12 +14,14 @@ class VisitService {
     required String restaurantId,
     required String employeeId,
     required double billAmount,
+    required String key,
   }) async {
     final response = await http.post(
       Uri.parse(_baseUrl),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
+        'Idempotency-Key': key,
       },
       body: json.encode({
         'customer_id': customerId,
@@ -42,10 +44,8 @@ class VisitService {
     final decoded = _safeDecode(response.body);
 
     if (decoded is Map<String, dynamic>) {
-      final visitJson = decoded['data'] ??
-          decoded['visit'] ??
-          decoded['item'] ??
-          decoded;
+      final visitJson =
+          decoded['data'] ?? decoded['visit'] ?? decoded['item'] ?? decoded;
 
       if (visitJson is Map<String, dynamic>) {
         return Visit.fromJson(visitJson);

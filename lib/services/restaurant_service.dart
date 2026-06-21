@@ -10,6 +10,31 @@ import '../models/dish.dart';
 class RestaurantService {
   final String _baseUrl = '${AppConstants.baseUrl}/restaurants';
 
+  Future<List<Restaurant>> searchRestaurants({String? term, double? minRating}) async {
+    final Map<String, String> queryParams = {};
+    if (term != null && term.isNotEmpty) {
+      queryParams['term'] = term;
+    }
+    if (minRating != null) {
+      queryParams['minRating'] = minRating.toString();
+    }
+
+    final uri = Uri.parse('$_baseUrl/search').replace(queryParameters: queryParams);
+    final response = await http.get(uri);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Failed to search restaurants (${response.statusCode})');
+    }
+
+    final dynamic body = json.decode(response.body);
+    final List<dynamic> list = _extractList(body);
+
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(Restaurant.fromJson)
+        .toList();
+  }
+
   Future<List<Restaurant>> fetchRestaurants({int page = 1, int limit = 10}) async {
     final uri = Uri.parse('$_baseUrl?page=$page&limit=$limit');
     final response = await http.get(uri);

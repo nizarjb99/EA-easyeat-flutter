@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/styles.dart';
 import '../../widgets/language_dropdown_widget.dart';
+import '../../widgets/theme_toggle_widget.dart';
+import '../../widgets/easy_eat_logo.dart';
 
 const Color _profileDark = AppColors.authText;
 const Color _profileMuted = AppColors.authTextMuted;
@@ -19,15 +21,21 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  @override
-  void initState() {
-    super.initState();
+@override
+void initState() {
+  super.initState();
 
-    Future.microtask(() {
+  Future.microtask(() async {
+    try {
       if (!mounted) return;
-      context.read<AuthProvider>().loadProfileFromApi();
-    });
-  }
+
+      await context.read<AuthProvider>().loadProfileFromApi();
+    } catch (e, s) {
+      debugPrint('PROFILE LOAD ERROR: $e');
+      debugPrint('$s');
+    }
+  });
+}
 
   Future<void> _refreshProfile() async {
     await context.read<AuthProvider>().loadProfileFromApi();
@@ -65,6 +73,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+
+    debugPrint('Building ProfileScreen');
+    debugPrint('Role: ${authProvider.role}');
+    debugPrint('Restaurant: ${authProvider.restaurant}');
+    debugPrint('isEmployee: ${authProvider.isEmployee}');
+    debugPrint('isLoggedIn: ${authProvider.isLoggedIn}');
+    
     final isLoading = authProvider.isLoading;
     final errorMessage = authProvider.errorMessage;
     final accentColor = _accentColor(authProvider);
@@ -72,26 +87,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final String displayName = authProvider.displayName;
     final String? email = authProvider.email;
     final restaurantData = authProvider.restaurant;
-    final String? restaurantName =
-        restaurantData?['profile']?['name'] ?? restaurantData?['name'];
 
-    final roleKey = authProvider.role ?? (authProvider.isCustomer ? 'customer' : 'staff');
-    final roleLabel = 'dashboard.roles.$roleKey'.tr();
+    String? restaurantName;
+    try {
+      restaurantName =
+      restaurantData?['profile']?['name'] ??
+      restaurantData?['name'];
+    } catch (e) {
+      debugPrint('RESTAURANT ERROR: $e');
+    }
+
+    final roleKey = authProvider.role?.toLowerCase() ??
+    (authProvider.isCustomer ? 'customer' : 'employee');
+    
+    String roleLabel;
+    try {
+      roleLabel = 'dashboard.roles.$roleKey'.tr();
+    } 
+    catch (_) {
+      roleLabel = roleKey;
+    }
+    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? AppColors.text : _profileDark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: _profileSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        title: const Text(
-          'EasyEat',
-          style: TextStyle(color: _profileDark, fontWeight: FontWeight.w900),
-        ),
-        actions: const [
-          LanguageDropdownWidget(),
-          SizedBox(width: 8),
+        title: const EasyEatLogo(height: 40),
+        actions: [
+          const ThemeToggleWidget(),
+          const LanguageDropdownWidget(),
+          const SizedBox(width: 8),
         ],
       ),
       body: authProvider.isLoggedIn

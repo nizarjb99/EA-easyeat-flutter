@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../providers/auth_provider.dart';
 import 'register_screen.dart';
 import '../../utils/styles.dart';
-
+import '../../widgets/language_selector.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -59,6 +60,16 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           
+          const SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: LanguageSelector(),
+              ),
+            ),
+          ),
+          
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40),
@@ -67,22 +78,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo and Brand (Mimicking image 2)
-                    const Text('🍽️', style: TextStyle(fontSize: 48)),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'EasyEat',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF0F172A),
-                        letterSpacing: -1,
-                      ),
-                    ),
-                    const Text(
-                      'Tu experiencia gastronómica Premium',
-                      style: TextStyle(color: Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w500),
-                    ),
+                    // Logo and Brand
+                    const _EasyEatLogo(),
                     const SizedBox(height: 40),
 
                     // Login Card
@@ -102,9 +99,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Bienvenido de vuelta',
-                            style: TextStyle(
+                          Text(
+                            'auth.welcome_back'.tr(),
+                            style: const TextStyle(
                               fontSize: 26,
                               fontWeight: FontWeight.w800,
                               color: Color(0xFF0F172A),
@@ -112,9 +109,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
-                            'Inicia sesión para acceder a tu panel principal',
-                            style: TextStyle(color: Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w500),
+                          Text(
+                            'auth.login_subtitle'.tr(),
+                            style: const TextStyle(color: Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w500),
                           ),
                           const SizedBox(height: 32),
                           
@@ -127,8 +124,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             child: Row(
                               children: [
-                                _buildTabBtn('customer', 'Cliente', Icons.person_outline),
-                                _buildTabBtn('employee', 'Restaurante', Icons.business_center_outlined),
+                                _buildTabBtn('customer', 'auth.customer'.tr(), Icons.person_outline),
+                                _buildTabBtn('employee', 'auth.employee'.tr(), Icons.business_center_outlined),
                               ],
                             ),
                           ),
@@ -136,16 +133,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           
                           _buildTextField(
                             controller: _emailController,
-                            label: 'Correo electrónico',
-                            placeholder: 'Introduzca tu correo...',
+                            label: 'auth.email_label'.tr(),
+                            placeholder: 'auth.email_placeholder'.tr(),
                             icon: Icons.mail_outline,
                           ),
                           const SizedBox(height: 20),
                           
                           _buildTextField(
                             controller: _passwordController,
-                            label: 'Contraseña',
-                            placeholder: '••••••••',
+                            label: 'auth.password_label'.tr(),
+                            placeholder: 'auth.password_placeholder'.tr(),
                             icon: Icons.lock_outline,
                             isPassword: true,
                             isVisible: _isPasswordVisible,
@@ -192,10 +189,57 @@ class _LoginScreenState extends State<LoginScreen> {
                                       width: 24,
                                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                                     )
-                                  : const Text(
-                                      'Acceder a mi cuenta',
-                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                  : Text(
+                                      'auth.login_button'.tr(),
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                                     ),
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 24),
+                          Row(
+                            children: [
+                              const Expanded(child: Divider(color: Color(0xFFCBD5E1))),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text('auth.or'.tr(), style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                              ),
+                              const Expanded(child: Divider(color: Color(0xFFCBD5E1))),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF0F172A),
+                                side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              onPressed: isLoading ? null : () {
+                                context.read<AuthProvider>().loginWithGoogle(
+                                  role: _loginType == 'customer' ? 'customer' : 'employee',
+                                ).then((success) {
+                                  if (success && mounted) {
+                                    Navigator.pushReplacementNamed(context, '/dashboard');
+                                  }
+                                });
+                              },
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text('G', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.blue)),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'auth.google_continue'.tr(),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -206,9 +250,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
-                          '¿No tienes cuenta todavía?',
-                          style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                        Text(
+                          'auth.no_account'.tr(),
+                          style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                         ),
                         TextButton(
                           onPressed: () {
@@ -218,7 +262,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             );
                           },
                           child: Text(
-                            'Regístrate gratis',
+                            'auth.register_free'.tr(),
                             style: TextStyle(color: primaryColor, fontWeight: FontWeight.w700),
                           ),
                         ),
@@ -337,4 +381,149 @@ class _LoginScreenState extends State<LoginScreen> {
     _passwordController.dispose();
     super.dispose();
   }
+}
+
+// ── Logo reutilitzable ────────────────────────────────────────────────────────
+class _EasyEatLogo extends StatelessWidget {
+  const _EasyEatLogo();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const _ForkSpoonIcon(size: 40),
+            const SizedBox(width: 10),
+            const Text(
+              'EASY',
+              style: TextStyle(
+                fontFamily: 'Arial',
+                fontSize: 40,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF18B97A),
+                letterSpacing: -1,
+                height: 1,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFCCCCCC),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            const Text(
+              'EAT',
+              style: TextStyle(
+                fontFamily: 'Arial',
+                fontSize: 40,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFFE8450A),
+                letterSpacing: -1,
+                height: 1,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(width: 50),
+            Container(
+              width: 82,
+              height: 2.5,
+              decoration: BoxDecoration(
+                color: const Color(0xFF18B97A).withOpacity(0.35),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 18),
+            Container(
+              width: 60,
+              height: 2.5,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8450A).withOpacity(0.35),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          'SIMPLE. FAST. DELICIOUS.',
+          style: TextStyle(
+            fontFamily: 'Arial',
+            fontSize: 10,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFF999999),
+            letterSpacing: 3.0,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ForkSpoonIcon extends StatelessWidget {
+  final double size;
+  const _ForkSpoonIcon({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size * 0.6,
+      height: size,
+      child: CustomPaint(painter: _ForkSpoonPainter()),
+    );
+  }
+}
+
+class _ForkSpoonPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final green = Paint()
+      ..color = const Color(0xFF18B97A)
+      ..style = PaintingStyle.fill;
+    final orange = Paint()
+      ..color = const Color(0xFFE8450A)
+      ..style = PaintingStyle.fill;
+
+    final w = size.width;
+    final h = size.height;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.08, h * 0.50, w * 0.20, h * 0.46), const Radius.circular(4)),
+      green,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.02, h * 0.37, w * 0.34, h * 0.09), const Radius.circular(3)),
+      green,
+    );
+    for (int i = 0; i < 3; i++) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.02 + i * (w * 0.12), h * 0.04, w * 0.09, h * 0.35), const Radius.circular(3)),
+        green,
+      );
+    }
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.70, h * 0.34, w * 0.20, h * 0.62), const Radius.circular(4)),
+      orange,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(w * 0.80, h * 0.18), width: w * 0.36, height: h * 0.28),
+      orange,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
