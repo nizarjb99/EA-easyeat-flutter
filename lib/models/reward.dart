@@ -11,6 +11,7 @@ class Reward {
   final int timesRedeemed;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final bool isRoulette;
 
   Reward({
     required this.id,
@@ -23,6 +24,7 @@ class Reward {
     this.timesRedeemed = 0,
     this.createdAt,
     this.updatedAt,
+    this.isRoulette = false,
   });
 
   factory Reward.fromJson(Map<String, dynamic> json) {
@@ -37,6 +39,7 @@ class Reward {
       timesRedeemed: (json['timesRedeemed'] as num?)?.toInt() ?? 0,
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'].toString()) : null,
+      isRoulette: json['isRoulette'] as bool? ?? false,
     );
   }
 
@@ -52,6 +55,7 @@ class Reward {
       'timesRedeemed': timesRedeemed,
       if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
+      'isRoulette': isRoulette,
     };
   }
 

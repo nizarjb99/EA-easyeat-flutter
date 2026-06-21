@@ -61,19 +61,43 @@ class RewardService {
     }
   }
 
-  // Uncoment if needed
-  // List<dynamic> _extractList(dynamic body) {
-  //   if (body is List<dynamic>) return body;
-  //   if (body is Map<String, dynamic>) {
-  //     final data = body['data'];
-  //     if (data is List<dynamic>) return data;
+  /// Plays the roulette minigame. Returns { won: bool, reward: Reward?, pointsAfter: int }
+  Future<Map<String, dynamic>> playRoulette(
+    String rewardId,
+    String customerId,
+    String token,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/$rewardId/play-roulette'),
+      headers: await _headers(token),
+      body: json.encode({'customer_id': customerId}),
+    );
 
-  //     final items = body['items'];
-  //     if (items is List<dynamic>) return items;
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return json.decode(response.body) as Map<String, dynamic>;
+    } else {
+      final body = json.decode(response.body);
+      throw Exception(body['message'] ?? 'Failed to play roulette');
+    }
+  }
 
-  //     final results = body['results'];
-  //     if (results is List<dynamic>) return results;
-  //   }
-  //   return const <dynamic>[];
-  // }
+  /// Fetches the list of unlocked (free) reward IDs for a customer at a restaurant
+  Future<List<String>> getUnlockedRewards(
+    String customerId,
+    String restaurantId,
+    String token,
+  ) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/unlocked/$customerId/$restaurantId'),
+      headers: await _headers(token),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final body = json.decode(response.body) as Map<String, dynamic>;
+      final List<dynamic> ids = body['unlockedRewardIds'] ?? [];
+      return ids.map((e) => e.toString()).toList();
+    } else {
+      throw Exception('Failed to fetch unlocked rewards');
+    }
+  }
 }

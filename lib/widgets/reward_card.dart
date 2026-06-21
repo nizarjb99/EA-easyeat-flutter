@@ -8,6 +8,7 @@ class RewardCard extends StatelessWidget {
   final Color accentColor;
   final Color bgColor;
   final VoidCallback? onTap;
+  final bool isUnlocked;
 
   const RewardCard({
     super.key,
@@ -15,12 +16,43 @@ class RewardCard extends StatelessWidget {
     required this.accentColor,
     required this.bgColor,
     this.onTap,
+    this.isUnlocked = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final isExpiringSoon = reward.isExpiringSoon;
     final daysLeft = reward.daysUntilExpiry;
+    final isRoulette = reward.isRoulette;
+
+    // Determine visual style
+    final cardBgColor = isRoulette
+        ? const Color(0xFF1A1035)
+        : isUnlocked
+            ? const Color(0xFFE8F5E9)
+            : bgColor;
+    final cardBorderColor = isRoulette
+        ? const Color(0xFFFF6B35).withValues(alpha: 0.6)
+        : isUnlocked
+            ? Colors.green.withValues(alpha: 0.5)
+            : isExpiringSoon
+                ? Colors.orange.withValues(alpha: 0.5)
+                : accentColor.withValues(alpha: 0.2);
+    final iconData = isRoulette
+        ? Icons.casino_rounded
+        : isUnlocked
+            ? Icons.lock_open_rounded
+            : Icons.card_giftcard_rounded;
+    final iconColor = isRoulette
+        ? Colors.amber
+        : isUnlocked
+            ? Colors.green.shade700
+            : accentColor;
+    final nameColor = isRoulette
+        ? Colors.white
+        : isUnlocked
+            ? Colors.green.shade800
+            : accentColor;
 
     return GestureDetector(
       onTap: onTap,
@@ -28,24 +60,57 @@ class RewardCard extends StatelessWidget {
         width: 160,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: bgColor,
+          color: cardBgColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isExpiringSoon
-                ? Colors.orange.withValues(alpha: 0.5)
-                : accentColor.withValues(alpha: 0.2),
-            width: isExpiringSoon ? 1.5 : 1,
+            color: cardBorderColor,
+            width: (isRoulette || isUnlocked) ? 1.5 : 1,
           ),
+          gradient: isRoulette
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF1A1035), Color(0xFF2D1B4E)],
+                )
+              : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon and points row
+            // Icon and badge row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.card_giftcard_rounded, color: accentColor, size: 26),
-                if (isExpiringSoon)
+                Icon(iconData, color: iconColor, size: 26),
+                if (isRoulette)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      '🎰',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  )
+                else if (isUnlocked)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Gratis!',
+                      style: TextStyle(
+                        color: Colors.green.shade700,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  )
+                else if (isExpiringSoon)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
@@ -69,23 +134,31 @@ class RewardCard extends StatelessWidget {
               reward.name,
               style: TextStyle(
                 fontWeight: FontWeight.w700,
-                color: accentColor,
+                color: nameColor,
                 fontSize: 13,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
-            // Points required
+            // Points / action label
             Text(
-              '${reward.pointsRequired} points',
+              isRoulette
+                  ? 'Jugar por ${reward.pointsRequired} pts'
+                  : isUnlocked
+                      ? 'Usar recompensa'
+                      : '${reward.pointsRequired} points',
               style: TextStyle(
-                color: accentColor.withValues(alpha: 0.7),
+                color: isRoulette
+                    ? Colors.amber.withValues(alpha: 0.9)
+                    : isUnlocked
+                        ? Colors.green.shade600
+                        : accentColor.withValues(alpha: 0.7),
                 fontSize: 11,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            if (reward.timesRedeemed > 0) ...[
+            if (!isRoulette && !isUnlocked && reward.timesRedeemed > 0) ...[
               const SizedBox(height: 2),
               Text(
                 '${reward.timesRedeemed}x redeemed',
