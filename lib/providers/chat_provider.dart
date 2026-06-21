@@ -16,27 +16,38 @@ class ChatProvider extends ChangeNotifier {
   bool _isSending = false;
   bool _isSocketConnected = false;
   String? _error;
-  String? _currentOrganizacionId;
+  String? _currentConversationId;
+  String? _currentUsuarioId;
 
   List<ChatMessage> get messages => List.unmodifiable(_messages);
   bool get isLoading => _isLoading;
   bool get isSending => _isSending;
   bool get isSocketConnected => _isSocketConnected;
   String? get error => _error;
+  String? get currentConversationId => _currentConversationId;
 
   Future<void> initChat({
     required String organizacionId,
     required String usuarioId,
     String? accessToken,
   }) async {
-    _currentOrganizacionId = organizacionId;
+    _currentUsuarioId = usuarioId;
     _error = null;
     _isLoading = true;
     notifyListeners();
 
     try {
-      final loadedMessages = await _chatService.obtenerMensajesPorOrganizacion(
-        organizacionId: organizacionId,
+      final conv = await _chatService.crearOObtenerConversacion(
+        customerId: usuarioId,
+        restaurantId: organizacionId,
+        accessToken: accessToken,
+      );
+
+      final conversationId = conv['_id']?.toString() ?? conv['id']?.toString() ?? '';
+      _currentConversationId = conversationId;
+
+      final loadedMessages = await _chatService.obtenerMensajesPorConversacion(
+        conversationId: conversationId,
         accessToken: accessToken,
       );
 
@@ -45,7 +56,8 @@ class ChatProvider extends ChangeNotifier {
         ..addAll(loadedMessages);
 
       _connectSocket(
-        organizacionId: organizacionId,
+        conversationId: conversationId,
+        usuarioId: usuarioId,
         accessToken: accessToken,
       );
     } catch (e) {
@@ -57,14 +69,17 @@ class ChatProvider extends ChangeNotifier {
   }
 
   void _connectSocket({
-    required String organizacionId,
+    required String conversationId,
+    required String usuarioId,
     String? accessToken,
   }) {
     _socketService.connect(
       accessToken: accessToken,
       onConnect: () {
         _isSocketConnected = true;
-        _socketService.joinOrganizacion(organizacionId);
+        _error = null; // Clear connection errors upon successful connection
+        _socketService.joinConversation(conversationId);
+        _socketService.joinCustomer(usuarioId);
         notifyListeners();
       },
       onDisconnect: () {
@@ -78,10 +93,10 @@ class ChatProvider extends ChangeNotifier {
     );
 
     _socketService.onNewMessage((message) {
-      final isSameOrganization = message.organizacion == _currentOrganizacionId;
+      final isSameConversation = message.conversation == _currentConversationId;
       final alreadyExists = _messages.any((item) => item.id == message.id);
 
-      if (isSameOrganization && !alreadyExists) {
+      if (isSameConversation && !alreadyExists) {
         _messages.add(message);
         _messages.sort((a, b) {
           final aDate = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -101,7 +116,7 @@ class ChatProvider extends ChangeNotifier {
   }) async {
     final cleanContent = contenido.trim();
 
-    if (cleanContent.isEmpty) {
+    if (cleanContent.isEmpty || _currentConversationId == null) {
       return;
     }
 
@@ -112,15 +127,17 @@ class ChatProvider extends ChangeNotifier {
     try {
       if (_socketService.isConnected) {
         _socketService.sendMessage(
+          conversationId: _currentConversationId!,
+          senderId: usuario,
+          senderRole: 'customer',
           contenido: cleanContent,
-          usuario: usuario,
-          organizacion: organizacion,
         );
       } else {
         final created = await _chatService.crearMensaje(
+          conversationId: _currentConversationId!,
+          senderId: usuario,
+          senderRole: 'customer',
           contenido: cleanContent,
-          usuario: usuario,
-          organizacion: organizacion,
           accessToken: accessToken,
         );
 
@@ -138,9 +155,11 @@ class ChatProvider extends ChangeNotifier {
     required String mensajeId,
     String? accessToken,
   }) async {
+    if (_currentUsuarioId == null) return;
     try {
       final updated = await _chatService.marcarMensajeComoLeido(
         mensajeId: mensajeId,
+        usuarioId: _currentUsuarioId!,
         accessToken: accessToken,
       );
 
@@ -160,18 +179,22 @@ class ChatProvider extends ChangeNotifier {
     required String usuario,
     required String organizacion,
   }) {
-    _socketService.emitTyping(
-      usuario: usuario,
-      organizacion: organizacion,
-    );
+    if (_currentConversationId != null) {
+      _socketService.emitTyping(
+        conversationId: _currentConversationId!,
+        senderId: usuario,
+        senderRole: 'customer',
+      );
+    }
   }
 
   void closeChat() {
-    if (_currentOrganizacionId != null) {
-      _socketService.leaveOrganizacion(_currentOrganizacionId!);
+    if (_currentConversationId != null) {
+      _socketService.leaveConversation(_currentConversationId!);
     }
 
-    _currentOrganizacionId = null;
+    _currentConversationId = null;
+    _currentUsuarioId = null;
     _messages.clear();
     notifyListeners();
   }

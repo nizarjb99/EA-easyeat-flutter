@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "661826604936",
+    "project_id": "easy-eat-7a441",
+    "storage_bucket": "easy-eat-7a441.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:661826604936:android:dc7e3c289f047f3404343d",
+        "android_client_info": {
+          "package_name": "com.example.ea_easyeat_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOGCu3L5vKPZpo1Amw9YdUhqEbplWpO7o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

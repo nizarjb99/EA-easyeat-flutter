@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/notification_provider.dart';
+import '../../services/fcm_service.dart';
+import '../../services/notification_router.dart';
 import '../_employee/home_employee_screen.dart';
 import 'discover_screen.dart';
 import 'profile_screen.dart';
 import 'popup_chat_screen.dart';
 import '../_customer/home_customer_screen.dart';
 import '../_customer/points_wallet_screen.dart';
+import 'accessibility/accessibility_floating_button.dart';
+import 'accessibility/accessibility_widgets.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -18,52 +23,73 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
+  FcmService? _fcmService;
 
-  final List<Widget> _employeeScreens = [
-    const HomeEmployeeScreen(),
-    const DiscoverScreen(),
-    const ProfileScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotifications();
+  }
 
-  final List<Widget> _customerScreens = [
-    const HomeCustomerScreen(),
-    const DiscoverScreen(),
-    const PointsWalletScreen(),
-    const ProfileScreen(),
-  ];
+  Future<void> _initializeNotifications() async {
+    final auth = context.read<AuthProvider>();
+    final notificationProvider = context.read<NotificationProvider>();
+
+    if (!auth.isLoggedIn || !auth.isCustomer) {
+      return;
+    }
+
+    _fcmService = FcmService();
+
+    await _fcmService!.initialize(
+      customerId: auth.id,
+      getAccessToken: () => auth.accessToken,
+      onNotificationTap: (payload) async {
+        if (!mounted) return;
+        await NotificationRouter.routeFromPayload(context, payload);
+      },
+      onForegroundNotification: (notification) {
+        notificationProvider.upsertForegroundNotification(notification);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(notification.message),
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'Veure',
+                onPressed: () {
+                  Navigator.pushNamed(context, '/notifications');
+                },
+              ),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _fcmService?.dispose();
+    super.dispose();
+  }
 
   void _onItemTapped(int index, bool isEmployee) {
     if (isEmployee) {
-      // Employee:
-      // 0 -> Home
-      // 1 -> Discover
-      // 2 -> Xat popup
-      // 3 -> Profile
       if (index == 2) {
         _openChatPopup();
         return;
       }
-
-      setState(() {
-        _selectedIndex = index == 3 ? 2 : index;
-      });
-
-      return;
-    }
-
-    // Customer:
-    // 0 -> Home
-    // 1 -> Discover
-    // 2 -> Points
-    // 3 -> Xat popup
-    // 4 -> Profile
-    if (index == 3) {
-      _openChatPopup();
-      return;
+    } else {
+      if (index == 3) {
+        _openChatPopup();
+        return;
+      }
     }
 
     setState(() {
-      _selectedIndex = index == 4 ? 3 : index;
+      _selectedIndex = index;
     });
   }
 
@@ -79,18 +105,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   int _getEmployeeBottomIndex() {
-    if (_selectedIndex >= 2) {
-      return 3;
-    }
-
     return _selectedIndex;
   }
 
   int _getCustomerBottomIndex() {
-    if (_selectedIndex >= 3) {
-      return 4;
-    }
-
     return _selectedIndex;
   }
 
@@ -102,10 +120,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     final localeKey = Key(context.locale.toString());
 
-    // We define screens inside build so they recreate and pick up locale changes
     final List<Widget> employeeScreens = [
       HomeEmployeeScreen(key: localeKey),
       DiscoverScreen(key: localeKey),
+      const SizedBox(), // chat placeholder
       ProfileScreen(key: localeKey),
     ];
 
@@ -113,6 +131,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       HomeCustomerScreen(key: localeKey),
       DiscoverScreen(key: localeKey),
       PointsWalletScreen(key: localeKey),
+      const SizedBox(), // chat placeholder
       ProfileScreen(key: localeKey),
     ];
 
@@ -163,9 +182,25 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     ];
 
     return Scaffold(
-      body: isEmployee
-          ? employeeScreens[_selectedIndex]
-          : customerScreens[_selectedIndex],
+      backgroundColor: Colors.transparent,
+      body: AccessibilityWrapper(
+        child: Stack(
+          children: [
+            // ── Main page content ──────────────────────────────────────────
+            isEmployee
+                ? employeeScreens[_selectedIndex]
+                : customerScreens[_selectedIndex],
+
+            // ── Accessibility FAB – bottom: 96 keeps it above the nav bar
+            //    (nav bar ≈ 60–64 dp + extra 32 dp breathing room)
+            const Positioned(
+              right: 24,
+              bottom: 96,
+              child: AccessibilityFloatingButton(),
+            ),
+          ],
+        ),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         items: isEmployee ? employeeNavItems : customerNavItems,
         currentIndex:

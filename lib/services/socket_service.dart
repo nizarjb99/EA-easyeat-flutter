@@ -25,7 +25,7 @@ class SocketService {
     _socket = io.io(
       _socketUrl,
       io.OptionBuilder()
-          .setTransports(['websocket'])
+          .setTransports(['websocket', 'polling'])
           .disableAutoConnect()
           .setAuth({
             if (accessToken != null && accessToken.isNotEmpty)
@@ -53,27 +53,41 @@ class SocketService {
     _socket!.connect();
   }
 
-  void joinOrganizacion(String organizacionId) {
-    _socket?.emit('chat:joinOrganization', {
-      'organizacionId': organizacionId,
+  void joinConversation(String conversationId) {
+    _socket?.emit('chat:joinConversation', {
+      'conversationId': conversationId,
     });
   }
 
-  void leaveOrganizacion(String organizacionId) {
-    _socket?.emit('chat:leaveOrganization', {
-      'organizacionId': organizacionId,
+  void leaveConversation(String conversationId) {
+    _socket?.emit('chat:leaveConversation', {
+      'conversationId': conversationId,
+    });
+  }
+
+  void joinCustomer(String customerId) {
+    _socket?.emit('chat:joinCustomer', {
+      'customerId': customerId,
+    });
+  }
+
+  void joinRestaurant(String restaurantId) {
+    _socket?.emit('chat:joinRestaurant', {
+      'restaurantId': restaurantId,
     });
   }
 
   void sendMessage({
+    required String conversationId,
+    required String senderId,
+    required String senderRole,
     required String contenido,
-    required String usuario,
-    required String organizacion,
   }) {
     _socket?.emit('chat:sendMessage', {
+      'conversationId': conversationId,
+      'senderId': senderId,
+      'senderRole': senderRole,
       'contenido': contenido,
-      'usuario': usuario,
-      'organizacion': organizacion,
     });
   }
 
@@ -88,23 +102,25 @@ class SocketService {
     });
   }
 
-  void onTyping(void Function(String usuarioId) callback) {
+  void onTyping(void Function(String senderId) callback) {
     _socket?.off('chat:typing');
 
     _socket?.on('chat:typing', (data) {
-      if (data is Map && data['usuario'] != null) {
-        callback(data['usuario'].toString());
+      if (data is Map && data['senderId'] != null) {
+        callback(data['senderId'].toString());
       }
     });
   }
 
   void emitTyping({
-    required String usuario,
-    required String organizacion,
+    required String conversationId,
+    required String senderId,
+    required String senderRole,
   }) {
     _socket?.emit('chat:typing', {
-      'usuario': usuario,
-      'organizacion': organizacion,
+      'conversationId': conversationId,
+      'senderId': senderId,
+      'senderRole': senderRole,
     });
   }
 

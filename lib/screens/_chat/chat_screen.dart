@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../models/restaurant.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/chat_provider.dart';
+import '../../utils/styles.dart';
 
 const Color _orange = Color(0xFFFF7A1A);
 const Color _dark = Color(0xFF0F172A);
@@ -102,17 +103,21 @@ class _ChatScreenState extends State<ChatScreen> {
     final auth = context.watch<AuthProvider>();
     final chat = context.watch<ChatProvider>();
     final currentUserId = auth.currentCustomer?.id ?? '';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? AppColors.dashboardBg : const Color(0xFFFFFBF7);
+    final surfaceColor = isDark ? AppColors.dashboardHeader : Colors.white;
+    final textColor = isDark ? AppColors.text : _dark;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBF7),
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: surfaceColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: _dark),
+        iconTheme: IconThemeData(color: textColor),
         title: Row(
           children: [
             CircleAvatar(
@@ -124,8 +129,8 @@ class _ChatScreenState extends State<ChatScreen> {
               child: Text(
                 _restaurantName,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: _dark,
+                style: TextStyle(
+                  color: textColor,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -208,27 +213,31 @@ class _EmptyChat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.text : _dark;
+    final mutedColor = isDark ? AppColors.textMuted : _grey;
+
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.chat_bubble_outline, size: 56, color: _grey),
-            SizedBox(height: 12),
+            Icon(Icons.chat_bubble_outline, size: 56, color: mutedColor),
+            const SizedBox(height: 12),
             Text(
               'Todavía no hay mensajes',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
-                color: _dark,
+                color: textColor,
               ),
             ),
-            SizedBox(height: 6),
+            const SizedBox(height: 6),
             Text(
               'Escribe el primer mensaje para contactar con el restaurante.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: _grey),
+              style: TextStyle(color: mutedColor),
             ),
           ],
         ),
@@ -252,9 +261,11 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final alignment = isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-    final backgroundColor = isMine ? _orange : Colors.white;
-    final textColor = isMine ? Colors.white : _dark;
+    final backgroundColor = isMine ? _orange : (isDark ? AppColors.darkSurface : Colors.white);
+    final textColor = isMine ? Colors.white : (isDark ? AppColors.text : _dark);
+    final mutedColor = isDark ? AppColors.textMuted : _grey;
 
     return Column(
       crossAxisAlignment: alignment,
@@ -292,9 +303,9 @@ class _MessageBubble extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 10, left: 6, right: 6),
           child: Text(
             _formatTime(createdAt),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: _grey,
+              color: mutedColor,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -328,12 +339,18 @@ class _MessageInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.dashboardHeader : Colors.white;
+    final inputColor = isDark ? AppColors.darkSurface : const Color(0xFFF8FAFC);
+    final textColor = isDark ? AppColors.text : _dark;
+    final hintColor = isDark ? AppColors.textMuted : _grey;
+
     return SafeArea(
       top: false,
       child: Container(
         padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: surfaceColor,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.06),
@@ -352,8 +369,9 @@ class _MessageInput extends StatelessWidget {
                 onChanged: onChanged,
                 decoration: InputDecoration(
                   hintText: 'Escribe un mensaje…',
+                  hintStyle: TextStyle(color: hintColor),
                   filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
+                  fillColor: inputColor,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
@@ -363,6 +381,7 @@ class _MessageInput extends StatelessWidget {
                     borderSide: BorderSide.none,
                   ),
                 ),
+                style: TextStyle(color: textColor),
                 onSubmitted: (_) => onSend(),
               ),
             ),

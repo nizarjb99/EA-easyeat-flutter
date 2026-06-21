@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import '../../providers/auth_provider.dart';
 import '../../services/customer_service.dart';
+import '../../services/nfc_service.dart';
 import '../../utils/styles.dart';
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -18,29 +19,49 @@ class CustomerQrScannerScreen extends StatefulWidget {
       _CustomerQrScannerScreenState();
 }
 
-class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
-  final MobileScannerController _controller = MobileScannerController();
+class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen>
+    with SingleTickerProviderStateMixin {
+  final MobileScannerController _qrController = MobileScannerController();
   final CustomerService _customerService = CustomerService();
 
+  late TabController _tabController;
   bool _isProcessing = false;
   String? _data;
+  bool _nfcActive = false;
+  String _nfcStatus = 'Acerca el móvil del cliente';
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_onTabChanged);
+  }
+
+  void _onTabChanged() {
+    if (_tabController.index == 0) {
+      // Tab QR
+      _stopNfc();
+      _qrController.start();
+    } else {
+      // Tab NFC
+      _qrController.stop();
+      _startNfc();
+    }
+  }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _qrController.dispose();
+    _tabController.dispose();
+    _stopNfc();
     super.dispose();
   }
 
-  Future<void> _handleQrDetection(BarcodeCapture barcodes) async {
+  // ── LOGIC: COMMON ──
+
+  void _processData(String rawValue) {
     if (_isProcessing || _data != null) return;
-
-    // Avoid using firstOrNull if you want simpler/safer behavior
-    final barcode = barcodes.barcodes.isNotEmpty
-        ? barcodes.barcodes.first
-        : null;
-    final rawValue = barcode?.rawValue?.trim();
-
-    if (rawValue == null || rawValue.isEmpty) return;
+    if (rawValue.isEmpty) return;
 
     setState(() {
       _isProcessing = true;
@@ -56,16 +77,21 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
         arguments: {'customerId': rawValue},
       );
     } else if (widget.type == 'reward') {
-      final Map<String, dynamic> json = jsonDecode(rawValue);
-      Navigator.pushReplacementNamed(
-        context,
-        '/exchange-reward',
-        arguments: {
-          'customerId': json['customer_id'],
-          'rewardId': json['reward_id'],
-          'restaurantId': json['restaurant_id'],
-        },
-      );
+      try {
+        final Map<String, dynamic> json = jsonDecode(rawValue);
+        Navigator.pushReplacementNamed(
+          context,
+          '/exchange-reward',
+          arguments: {
+            'customerId': json['customer_id'] ?? json['userId'],
+            'rewardId': json['reward_id'] ?? json['rewardId'],
+            'restaurantId': json['restaurant_id'] ?? json['restaurantId'],
+          },
+        );
+      } catch (e) {
+        _showError('Formato de QR inválido para recompensa');
+        _reset();
+      }
     }
   }
 
@@ -74,6 +100,7 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
     setState(() {
       _isProcessing = false;
       _data = null;
+      _nfcStatus = 'Acerca el móvil del cliente';
     });
   }
 
@@ -88,9 +115,56 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
     );
   }
 
-  void _toggleFlash() {
-    _controller.toggleTorch();
+  // ── LOGIC: QR ──
+
+  Future<void> _handleQrDetection(BarcodeCapture barcodes) async {
+    final barcode = barcodes.barcodes.isNotEmpty ? barcodes.barcodes.first : null;
+    final rawValue = barcode?.rawValue?.trim();
+    if (rawValue != null) {
+      _processData(rawValue);
+    }
   }
+
+  void _toggleFlash() {
+    _qrController.toggleTorch();
+  }
+
+  // ── LOGIC: NFC ──
+
+  Future<void> _startNfc() async {
+    final available = await NfcService.isNfcAvailable();
+    if (!available) {
+      setState(() => _nfcStatus = 'NFC no disponible en este dispositivo');
+      return;
+    }
+
+    setState(() {
+      _nfcActive = true;
+      _nfcStatus = 'Escuchando NFC...\nAcerca el móvil del cliente';
+    });
+
+    await NfcService.startNfcReading(
+      onCustomerIdReceived: (customerId) {
+        _stopNfc();
+        _processData(customerId);
+      },
+      onError: (error) {
+        setState(() => _nfcStatus = error);
+        _stopNfc();
+      },
+    );
+  }
+
+  void _stopNfc() {
+    NfcService.stopNfcReading();
+    if (mounted) {
+      setState(() {
+        _nfcActive = false;
+      });
+    }
+  }
+
+  // ── UI BUILD ──
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +174,7 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
         backgroundColor: AppColors.dashboardHeader,
         elevation: 0,
         title: const Text(
-          'Scan Customer QR Code',
+          'Identificar Cliente',
           style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900),
         ),
         centerTitle: true,
@@ -109,60 +183,34 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.flashlight_on, color: AppColors.customer),
-            tooltip: 'Toggle flash',
-            onPressed: _toggleFlash,
-          ),
+          if (_tabController.index == 0)
+            IconButton(
+              icon: const Icon(Icons.flashlight_on, color: AppColors.customer),
+              tooltip: 'Toggle flash',
+              onPressed: _toggleFlash,
+            ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: AppColors.employee,
+          labelColor: AppColors.employee,
+          unselectedLabelColor: AppColors.textMuted,
+          tabs: const [
+            Tab(icon: Icon(Icons.qr_code_scanner), text: 'Escáner QR'),
+            Tab(icon: Icon(Icons.nfc), text: 'Lector NFC'),
+          ],
+        ),
       ),
       body: Stack(
         children: [
-          // Camera scanner
-          MobileScanner(
-            controller: _controller,
-            onDetect: _handleQrDetection,
-            errorBuilder: (context, error, child) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.camera_alt_outlined,
-                      size: 48,
-                      color: AppColors.customer,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Camera permission required',
-                      style: TextStyle(
-                        color: AppColors.text,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      error.toString(),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: AppColors.textMuted,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-            placeholderBuilder: (context, child) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppColors.customer),
-              );
-            },
+          TabBarView(
+            controller: _tabController,
+            physics: const NeverScrollableScrollPhysics(), // Evita cambiar deslizando para no romper la cámara accidentalmente
+            children: [
+              _buildQrTab(),
+              _buildNfcTab(),
+            ],
           ),
-
-          // Overlay with scanner frame and instructions
-          _ScannerOverlay(isProcessing: _isProcessing),
 
           // Loading indicator (if processing)
           if (_isProcessing)
@@ -175,7 +223,7 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
                     CircularProgressIndicator(color: AppColors.customer),
                     SizedBox(height: 16),
                     Text(
-                      'Verifying customer...',
+                      'Verificando cliente...',
                       style: TextStyle(
                         color: AppColors.text,
                         fontSize: 14,
@@ -185,6 +233,125 @@ class _CustomerQrScannerScreenState extends State<CustomerQrScannerScreen> {
                   ],
                 ),
               ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQrTab() {
+    return Stack(
+      children: [
+        MobileScanner(
+          controller: _qrController,
+          onDetect: _handleQrDetection,
+          errorBuilder: (context, error) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.camera_alt_outlined,
+                    size: 48,
+                    color: AppColors.customer,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Camera permission required',
+                    style: TextStyle(
+                      color: AppColors.text,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    error.toString(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        _ScannerOverlay(isProcessing: _isProcessing),
+      ],
+    );
+  }
+
+  Widget _buildNfcTab() {
+    return Container(
+      width: double.infinity,
+      color: Colors.white,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              // Ripple effect background
+              if (_nfcActive)
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.8, end: 1.2),
+                  duration: const Duration(seconds: 1),
+                  curve: Curves.easeInOut,
+                  builder: (context, value, child) {
+                    return Container(
+                      width: 150 * value,
+                      height: 150 * value,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.employee.withAlpha((255 * (1.2 - value) * 0.3).round()),
+                      ),
+                    );
+                  },
+                  onEnd: () {
+                    if (mounted && _nfcActive) setState(() {});
+                  },
+                ),
+              // Main NFC Icon
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: AppColors.employee.withAlpha((255 * 0.1).round()),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.nfc,
+                  size: 64,
+                  color: AppColors.employee,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 40),
+          Text(
+            _nfcStatus,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.text,
+            ),
+          ),
+          const SizedBox(height: 20),
+          if (!_nfcActive)
+            ElevatedButton(
+              onPressed: _startNfc,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.employee,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Reiniciar Escáner NFC'),
             ),
         ],
       ),
@@ -204,25 +371,17 @@ class _ScannerOverlay extends StatelessWidget {
     final screenSize = MediaQuery.of(context).size;
     final frameSize = 280.0;
     final frameLeft = (screenSize.width - frameSize) / 2;
-    final frameTop = (screenSize.height - frameSize) / 2 - 40;
+    final frameTop = (screenSize.height - frameSize) / 2 - 80;
 
     return Stack(
       children: [
-        // Semi-transparent overlay outside scanner frame
         Positioned.fill(
           child: CustomPaint(
             painter: _ScannerFramePainter(
-              frameRect: Rect.fromLTWH(
-                frameLeft,
-                frameTop,
-                frameSize,
-                frameSize,
-              ),
+              frameRect: Rect.fromLTWH(frameLeft, frameTop, frameSize, frameSize),
             ),
           ),
         ),
-
-        // Instructions below frame
         Positioned(
           bottom: 60,
           left: 20,
@@ -234,23 +393,17 @@ class _ScannerOverlay extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.customer.withOpacity(0.3),
-                  ),
+                  border: Border.all(color: AppColors.customer.withOpacity(0.3)),
                 ),
                 child: Column(
                   children: [
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: AppColors.customer,
-                          size: 16,
-                        ),
+                        Icon(Icons.info_outline, color: AppColors.customer, size: 16),
                         SizedBox(width: 8),
                         Text(
-                          'Position the QR code in the frame',
+                          'Apunta al código QR',
                           style: TextStyle(
                             color: AppColors.text,
                             fontSize: 13,
@@ -262,12 +415,9 @@ class _ScannerOverlay extends StatelessWidget {
                     if (!isProcessing) ...[
                       const SizedBox(height: 8),
                       const Text(
-                        'Make sure the code is clearly visible and well-lit',
+                        'Asegúrate de que el código esté bien iluminado',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 11,
-                        ),
+                        style: TextStyle(color: AppColors.textMuted, fontSize: 11),
                       ),
                     ],
                   ],
@@ -291,12 +441,10 @@ class _ScannerFramePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Semi-transparent dark background outside frame
     final bgPaint = Paint()
       ..color = Colors.black.withOpacity(0.6)
       ..style = PaintingStyle.fill;
 
-    // Draw the dark area around the frame
     final path = Path()
       ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
       ..addRect(frameRect)
@@ -304,7 +452,6 @@ class _ScannerFramePainter extends CustomPainter {
 
     canvas.drawPath(path, bgPaint);
 
-    // Draw frame border (employee green)
     final framePaint = Paint()
       ..color = AppColors.employee
       ..style = PaintingStyle.stroke
@@ -312,7 +459,6 @@ class _ScannerFramePainter extends CustomPainter {
 
     canvas.drawRect(frameRect, framePaint);
 
-    // Draw corner brackets (customer orange)
     final cornerSize = 24.0;
     final cornerPaint = Paint()
       ..color = AppColors.customer
@@ -321,56 +467,22 @@ class _ScannerFramePainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     // Top-left
-    canvas.drawLine(
-      Offset(frameRect.left, frameRect.top + cornerSize),
-      Offset(frameRect.left, frameRect.top),
-      cornerPaint,
-    );
-    canvas.drawLine(
-      Offset(frameRect.left, frameRect.top),
-      Offset(frameRect.left + cornerSize, frameRect.top),
-      cornerPaint,
-    );
+    canvas.drawLine(Offset(frameRect.left, frameRect.top + cornerSize), Offset(frameRect.left, frameRect.top), cornerPaint);
+    canvas.drawLine(Offset(frameRect.left, frameRect.top), Offset(frameRect.left + cornerSize, frameRect.top), cornerPaint);
 
     // Top-right
-    canvas.drawLine(
-      Offset(frameRect.right - cornerSize, frameRect.top),
-      Offset(frameRect.right, frameRect.top),
-      cornerPaint,
-    );
-    canvas.drawLine(
-      Offset(frameRect.right, frameRect.top),
-      Offset(frameRect.right, frameRect.top + cornerSize),
-      cornerPaint,
-    );
+    canvas.drawLine(Offset(frameRect.right - cornerSize, frameRect.top), Offset(frameRect.right, frameRect.top), cornerPaint);
+    canvas.drawLine(Offset(frameRect.right, frameRect.top), Offset(frameRect.right, frameRect.top + cornerSize), cornerPaint);
 
     // Bottom-left
-    canvas.drawLine(
-      Offset(frameRect.left, frameRect.bottom - cornerSize),
-      Offset(frameRect.left, frameRect.bottom),
-      cornerPaint,
-    );
-    canvas.drawLine(
-      Offset(frameRect.left, frameRect.bottom),
-      Offset(frameRect.left + cornerSize, frameRect.bottom),
-      cornerPaint,
-    );
+    canvas.drawLine(Offset(frameRect.left, frameRect.bottom - cornerSize), Offset(frameRect.left, frameRect.bottom), cornerPaint);
+    canvas.drawLine(Offset(frameRect.left, frameRect.bottom), Offset(frameRect.left + cornerSize, frameRect.bottom), cornerPaint);
 
     // Bottom-right
-    canvas.drawLine(
-      Offset(frameRect.right, frameRect.bottom - cornerSize),
-      Offset(frameRect.right, frameRect.bottom),
-      cornerPaint,
-    );
-    canvas.drawLine(
-      Offset(frameRect.right - cornerSize, frameRect.bottom),
-      Offset(frameRect.right, frameRect.bottom),
-      cornerPaint,
-    );
+    canvas.drawLine(Offset(frameRect.right, frameRect.bottom - cornerSize), Offset(frameRect.right, frameRect.bottom), cornerPaint);
+    canvas.drawLine(Offset(frameRect.right - cornerSize, frameRect.bottom), Offset(frameRect.right, frameRect.bottom), cornerPaint);
   }
 
   @override
-  bool shouldRepaint(_ScannerFramePainter oldDelegate) {
-    return oldDelegate.frameRect != frameRect;
-  }
+  bool shouldRepaint(_ScannerFramePainter oldDelegate) => oldDelegate.frameRect != frameRect;
 }

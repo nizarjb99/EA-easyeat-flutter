@@ -7,6 +7,7 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
+import '../../utils/styles.dart';
 
 const String _apiBaseUrl = AppConstants.baseUrl;
 
@@ -124,9 +125,19 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
   }
 
   void _connectSocket() {
+    final auth = context.read<AuthProvider>();
+    final token = auth.accessToken;
+
     _socket = io.io(
       _apiBaseUrl,
-      io.OptionBuilder().disableAutoConnect().build(),
+      io.OptionBuilder()
+          .setTransports(['websocket', 'polling'])
+          .disableAutoConnect()
+          .setAuth({
+            if (token != null && token.isNotEmpty)
+              'token': token,
+          })
+          .build(),
     );
 
     _socket!.onConnect((_) {
@@ -134,6 +145,12 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
 
       _safeSetState(() {
         _socketConnected = true;
+        // Clear socket-related errors once connected
+        if (_error != null &&
+            (_error!.startsWith('No s’ha pogut connectar') ||
+             _error!.startsWith('Error de socket:'))) {
+          _error = null;
+        }
       });
 
       if (_isEmployee) {
@@ -154,6 +171,13 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
         _socket?.emit('chat:joinConversation', {
           'conversationId': _selectedConversation!.id,
         });
+        if (!_isLoading) {
+          _loadConversationMessages(_selectedConversation!.id);
+        }
+      } else {
+        if (!_openedFromRestaurant && !_isLoading) {
+          _loadConversationsForCurrentUser();
+        }
       }
     });
 
@@ -538,8 +562,12 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
   @override
   Widget build(BuildContext context) {
     const Color orange = Color(0xFFFF7A1A);
-    const Color dark = Color(0xFF0F172A);
-    const Color grey = Color(0xFF64748B);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dark = isDark ? AppColors.text : const Color(0xFF0F172A);
+    final grey = isDark ? AppColors.textMuted : const Color(0xFF64748B);
+    final surfaceColor = isDark ? AppColors.dashboardHeader : const Color(0xFFFFFBF7);
+    final cardColor = isDark ? AppColors.darkSurface : Colors.white;
+    final inputColor = isDark ? AppColors.darkSurface : Colors.white;
 
     final title = _hasSelectedConversation
         ? (_isEmployee
@@ -551,9 +579,9 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
       child: Container(
         height: MediaQuery.of(context).size.height * 0.74,
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
-        decoration: const BoxDecoration(
-          color: Color(0xFFFFFBF7),
-          borderRadius: BorderRadius.vertical(
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: const BorderRadius.vertical(
             top: Radius.circular(28),
           ),
         ),
@@ -563,7 +591,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
               width: 42,
               height: 5,
               decoration: BoxDecoration(
-                color: Colors.black26,
+                color: isDark ? AppColors.glassBorder : Colors.black26,
                 borderRadius: BorderRadius.circular(999),
               ),
             ),
@@ -573,12 +601,12 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
                 if (_hasSelectedConversation)
                   IconButton(
                     onPressed: _backToConversations,
-                    icon: const Icon(Icons.arrow_back_rounded),
+                    icon: Icon(Icons.arrow_back_rounded, color: dark),
                   )
                 else
-                  const CircleAvatar(
-                    backgroundColor: Color(0xFFFFE9D9),
-                    child: Icon(
+                  CircleAvatar(
+                    backgroundColor: orange.withOpacity(0.12),
+                    child: const Icon(
                       Icons.chat_bubble_outline,
                       color: orange,
                     ),
@@ -588,7 +616,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
                   child: Text(
                     title,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: dark,
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
@@ -604,7 +632,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close_rounded),
+                  icon: Icon(Icons.close_rounded, color: dark),
                 ),
               ],
             ),
@@ -631,16 +659,17 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _hasSelectedConversation
-                      ? _buildMessages(orange: orange, dark: dark, grey: grey)
+                      ? _buildMessages(orange: orange, dark: dark, grey: grey, cardColor: cardColor)
                       : _buildConversationList(
                           orange: orange,
                           dark: dark,
                           grey: grey,
+                          cardColor: cardColor,
                         ),
             ),
             if (_hasSelectedConversation) ...[
               const SizedBox(height: 8),
-              _buildMessageInput(orange),
+              _buildMessageInput(orange, inputColor, dark, grey),
             ],
           ],
         ),
@@ -652,6 +681,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
     required Color orange,
     required Color dark,
     required Color grey,
+    required Color cardColor,
   }) {
     if (_conversations.isEmpty) {
       return Center(
@@ -704,7 +734,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardColor,
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
@@ -717,7 +747,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
           child: ListTile(
             onTap: () => _selectConversation(conversation),
             leading: CircleAvatar(
-              backgroundColor: const Color(0xFFFFE9D9),
+              backgroundColor: orange.withOpacity(0.12),
               child: Icon(
                 _isEmployee ? Icons.person_rounded : Icons.restaurant_rounded,
                 color: orange,
@@ -739,7 +769,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            trailing: const Icon(Icons.chevron_right_rounded),
+            trailing: Icon(Icons.chevron_right_rounded, color: grey),
           ),
         );
       },
@@ -750,6 +780,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
     required Color orange,
     required Color dark,
     required Color grey,
+    required Color cardColor,
   }) {
     if (_messages.isEmpty) {
       return Center(
@@ -782,7 +813,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
               vertical: 10,
             ),
             decoration: BoxDecoration(
-              color: isMine ? orange : Colors.white,
+              color: isMine ? orange : cardColor,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(18),
                 topRight: const Radius.circular(18),
@@ -810,7 +841,12 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
     );
   }
 
-  Widget _buildMessageInput(Color orange) {
+  Widget _buildMessageInput(
+    Color orange,
+    Color inputColor,
+    Color textColor,
+    Color hintColor,
+  ) {
     return Row(
       children: [
         Expanded(
@@ -820,8 +856,9 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
             maxLines: 3,
             decoration: InputDecoration(
               hintText: 'Escriu un missatge...',
+              hintStyle: TextStyle(color: hintColor),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: inputColor,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 12,
@@ -831,6 +868,7 @@ class _PopupChatScreenState extends State<PopupChatScreen> {
                 borderSide: BorderSide.none,
               ),
             ),
+            style: TextStyle(color: textColor),
             onSubmitted: (_) => _sendMessage(),
           ),
         ),
