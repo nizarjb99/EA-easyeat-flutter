@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/restaurant.dart';
 import '../../models/reward.dart';
 import '../../models/dish.dart';
 import '../../models/review.dart';
 import '../../services/restaurant_service.dart';
-import '../../services/review_service.dart';
-import '../../services/auth_service.dart';
 import '../../widgets/reward_card.dart';
 import '../../widgets/dish_card.dart';
 import '../../widgets/dish_skeleton_card.dart';
 import '../_customer/qr_code_screen.dart';
+import '../_customer/roulette_minigame_screen.dart';
 import '../_common/popup_chat_screen.dart';
 
 // ---------------------------------------------------------------------------
@@ -593,10 +593,10 @@ class _InfoRow extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// REWARDS
+// REWARDS (with roulette & unlocked support)
 // ---------------------------------------------------------------------------
 
-class _RewardsSection extends StatelessWidget {
+class _RewardsSection extends StatefulWidget {
   final String restaurantId;
   final Future<List<Reward>> rewardsFuture;
   final Color accentColor;
@@ -612,16 +612,80 @@ class _RewardsSection extends StatelessWidget {
   });
 
   @override
+  State<_RewardsSection> createState() => _RewardsSectionState();
+}
+
+class _RewardsSectionState extends State<_RewardsSection> {
+  final RewardService _rewardService = RewardService();
+  List<String> _unlockedRewardIds = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUnlockedRewards();
+  }
+
+  Future<void> _fetchUnlockedRewards() async {
+    final auth = context.read<AuthProvider>();
+    if (auth.id == null || auth.accessToken == null) return;
+
+    try {
+      final ids = await _rewardService.getUnlockedRewards(
+        auth.id!,
+        widget.restaurantId,
+        auth.accessToken!,
+      );
+      if (mounted) {
+        setState(() => _unlockedRewardIds = ids);
+      }
+    } catch (_) {
+      // Silently fail — unlocked badges are optional UI
+    }
+  }
+
+  void _onRewardTap(BuildContext context, Reward reward, List<Reward> allRewards) {
+    if (reward.isRoulette) {
+      // Navigate to the roulette minigame
+      final nonRouletteRewards = allRewards.where((r) => !r.isRoulette).toList();
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => RouletteMinigameScreen(
+            rouletteReward: reward,
+            restaurantId: widget.restaurantId,
+            availableRewards: nonRouletteRewards,
+          ),
+        ),
+      ).then((result) {
+        if (result == true) {
+          _fetchUnlockedRewards();
+        }
+      });
+    } else {
+      // Normal reward or unlocked reward — show QR code
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => QRCodeScreen(
+            restaurantId: widget.restaurantId,
+            rewardId: reward.id,
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionTitle(title: 'Rewards', textDark: textDark),
+          _SectionTitle(title: 'Rewards', textDark: widget.textDark),
           const SizedBox(height: 12),
           FutureBuilder<List<Reward>>(
-            future: rewardsFuture,
+            future: widget.rewardsFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return SizedBox(
@@ -631,8 +695,8 @@ class _RewardsSection extends StatelessWidget {
                     itemCount: 3,
                     separatorBuilder: (_, __) => const SizedBox(width: 12),
                     itemBuilder: (_, __) => RewardCardSkeleton(
-                      accentColor: accentColor,
-                      bgColor: orangeLight,
+                      accentColor: widget.accentColor,
+                      bgColor: widget.orangeLight,
                     ),
                   ),
                 );
@@ -642,7 +706,7 @@ class _RewardsSection extends StatelessWidget {
                 return _EmptyPlaceholder(
                   icon: Icons.error_outline_rounded,
                   message: 'Error loading rewards',
-                  accentColor: accentColor,
+                  accentColor: widget.accentColor,
                 );
               }
 
@@ -651,34 +715,28 @@ class _RewardsSection extends StatelessWidget {
                 return _EmptyPlaceholder(
                   icon: Icons.card_giftcard_rounded,
                   message: 'Aviat hi haurà recompenses disponibles',
-                  accentColor: accentColor,
+                  accentColor: widget.accentColor,
                 );
               }
 
-              final displayedRewards = rewards.take(5).toList();
+              final displayedRewards = rewards.take(8).toList();
               return SizedBox(
                 height: 110,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: displayedRewards.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (_, index) => RewardCard(
-                    reward: displayedRewards[index],
-                    accentColor: accentColor,
-                    bgColor: orangeLight,
-                    onTap: () {
-                      final selectedReward = displayedRewards[index];
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => QRCodeScreen(
-                            restaurantId: restaurantId,
-                            rewardId: selectedReward.id,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                  itemBuilder: (_, index) {
+                    final reward = displayedRewards[index];
+                    final isUnlocked = _unlockedRewardIds.contains(reward.id);
+                    return RewardCard(
+                      reward: reward,
+                      accentColor: widget.accentColor,
+                      bgColor: widget.orangeLight,
+                      isUnlocked: isUnlocked,
+                      onTap: () => _onRewardTap(context, reward, rewards),
+                    );
+                  },
                 ),
               );
             },
